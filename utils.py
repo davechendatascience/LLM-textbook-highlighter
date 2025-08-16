@@ -2,7 +2,41 @@ from tkinter import Tk, filedialog
 import pdfplumber
 from nltk.tokenize import sent_tokenize
 import fitz  # PyMuPDF
+import fasttext
 import re
+from collections import Counter
+
+lang_detect_model = fasttext.load_model('models/lid.176.bin')
+
+def chinese_sentence_tokenizer(text):
+    # Split by Chinese full stop, exclamation, and question marks (and keep punctuation)
+    fragments = re.split(r'(。|！|\!|？|\?)', text)
+    sentences = []
+    for i in range(0, len(fragments)-1, 2):
+        sentence = fragments[i] + fragments[i+1]
+        if sentence.strip():
+            sentences.append(sentence.strip())
+    # Handle last fragment
+    if len(fragments) % 2 != 0 and fragments[-1].strip():
+        sentences.append(fragments[-1].strip())
+    return sentences
+
+def majority_vote_language(text):
+    lines = [line for line in text.split('\n') if line.strip()]
+    langs = [lang_detect_model.predict(line)[0][0].replace('__label__','') for line in lines]
+    most_common = Counter(langs).most_common(1)
+    return most_common[0][0] if most_common else None
+
+def auto_sentence_tokenize(text, lang_detect_model):
+    # majority vote the
+    lang = majority_vote_language(text)
+    if lang == 'zh-cn' or lang == 'zh':
+        return chinese_sentence_tokenizer(text)
+    else:
+        # Use English or other European language tokenizer
+        from nltk.tokenize import sent_tokenize
+        return sent_tokenize(text)
+
 
 def extract_sentences_with_indices(pdf_path):
     sentences = []
@@ -10,7 +44,7 @@ def extract_sentences_with_indices(pdf_path):
         for page_num, page in enumerate(pdf.pages):
             text = page.extract_text()
             if text:
-                page_sentences = sent_tokenize(text)
+                page_sentences = auto_sentence_tokenize(text, lang_detect_model=lang_detect_model)
                 for idx, sent in enumerate(page_sentences):
                     # (global_index, page_number, local_index, sentence)
                     sentences.append((len(sentences)+1, page_num, idx, sent))

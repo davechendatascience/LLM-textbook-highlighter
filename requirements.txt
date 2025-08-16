@@ -3,3 +3,4 @@ pdfplumber
 PyMuPDF
 nltk
 requests
+fasttext-wheel

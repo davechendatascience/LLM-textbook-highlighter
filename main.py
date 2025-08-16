@@ -34,6 +34,7 @@ if __name__ == "__main__":
         meaningful_chunks = [
             chunk for chunk in all_chunks if is_chunk_meaningful(chunk, min_length=250, min_sentences=4, ignore_patterns=None)
         ]
+        print("total chunks:", len(all_chunks), "meaningful chunks:", len(meaningful_chunks))
         for i, chunk_with_idx in enumerate(meaningful_chunks):
             prompt = build_contextual_highlight_prompt(chunk_with_idx)
             llm_output = send_prompt_to_perplexity(prompt, api_key, model="sonar-pro")
