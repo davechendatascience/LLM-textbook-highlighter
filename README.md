@@ -12,3 +12,5 @@ You should have a json file with the format as follows
     "perplexity_api_key": "secret"
 }
 ```
+
+Be aware of the model type you use or the credits run up real fast!
