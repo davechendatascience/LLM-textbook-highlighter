@@ -61,7 +61,8 @@ def build_contextual_highlight_prompt(chunk_with_idx):
 
     prompt = (
         "Below is a segment from a scientific document. "
-        "Use the full context to select the most important sentences for understanding the main ideas. "
+        "First I want you to identify the key concepts in this segment. "
+        "Then I want you to identify the sentences that best explain these concepts. "
         "Return ONLY the indices of those sentences as a comma-separated list (e.g., 2, 5, 7).\n\n"
         f"Segment context:\n{segment_text.strip()}\n\n"
         "Numbered sentences:\n" +

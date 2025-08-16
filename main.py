@@ -31,7 +31,7 @@ if __name__ == "__main__":
         client = Client()
 
         # filter unmeaningful chunks
-        all_chunks = list(chunk_sentences_with_mapping(sentences, chunk_size=40))
+        all_chunks = list(chunk_sentences_with_mapping(sentences, chunk_size=200))
         meaningful_chunks = [
             chunk for chunk in all_chunks if is_chunk_meaningful(chunk, min_length=250, min_sentences=4, ignore_patterns=None)
         ]
