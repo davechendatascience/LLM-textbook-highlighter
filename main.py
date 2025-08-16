@@ -2,6 +2,7 @@
 from utils import *
 from llm import *
 from ollama import Client
+import fasttext
 import json
 
 # Example usage (commented out)
