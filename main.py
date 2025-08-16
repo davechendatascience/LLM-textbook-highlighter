@@ -36,6 +36,7 @@ if __name__ == "__main__":
             print("Processed Percentage:", int((i+1) / len(meaningful_chunks) * 100), "%")
         
         print("Highlighting Completed!")
+        root.withdraw()
         output_path = filedialog.asksaveasfilename(
             defaultextension=".pdf",
             filetypes=[("PDF files", "*.pdf")],
