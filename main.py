@@ -1,48 +1,16 @@
-from tkinter import Tk, filedialog
-import pdfplumber
-from nltk.tokenize import sent_tokenize
 
-def extract_sentences_with_indices(pdf_path):
-    sentences = []
-    with pdfplumber.open(pdf_path) as pdf:
-        for page_num, page in enumerate(pdf.pages):
-            text = page.extract_text()
-            if text:
-                page_sentences = sent_tokenize(text)
-                for idx, sent in enumerate(page_sentences):
-                    # (global_index, page_number, local_index, sentence)
-                    sentences.append((len(sentences)+1, page_num, idx, sent))
-    return sentences  # (global index, page number, in-page index, sentence)
-
-def chunk_sentences(sentences, chunk_size=40):
-    for i in range(0, len(sentences), chunk_size):
-        yield sentences[i:i+chunk_size]
-
-def prompt_llm_for_indices(chunk):
-    # Example prompt construction
-    prompt = "Which sentences (by index) are most important?\n\n"
-    prompt += "\n".join([f"{s[0]}: {s[1]}" for s in chunk])
-    # Send to Ollama and get output (not shown, mock here):
-    # Example output: "Indices: 1, 5, 7"
-    return [1, 5, 7]  # Replace with actual model output parsing
-
-import fitz  # PyMuPDF
-
-def highlight_sentences_in_pdf(pdf_path, sentences, highlighted_indices, output_path):
-    doc = fitz.open(pdf_path)
-    for idx, page_num, _, sent in sentences:
-        if idx in highlighted_indices:
-            page = doc[page_num]
-            # highlight each occurrence of the sentence string (could be optimized)
-            areas = page.search_for(sent)
-            for inst in areas:
-                page.add_highlight_annot(inst)
-    doc.save(output_path, deflate=True)
-    doc.close()
-
+from utils import *
+from llm import *
+from ollama import Client
+import json
 
 # Example usage (commented out)
 if __name__ == "__main__":
+    # api key
+    with open('secrets.json', 'r') as f:
+        secrets = json.load(f)
+    api_key = secrets['perplexity_api_key']
+
     root = Tk()
     root.withdraw()
     file_path = filedialog.askopenfilename()
@@ -50,14 +18,33 @@ if __name__ == "__main__":
         sentences = extract_sentences_with_indices(file_path)
         # For actual use, iterate over chunks:
         highlighted_indices = set()
-        for chunk in chunk_sentences(sentences):
-            indices = prompt_llm_for_indices(chunk)
-            highlighted_indices.update(indices)
+        all_highlights = []
 
-        # Example usage:
-        highlight_sentences_in_pdf(
-            file_path, 
-            sentences, 
-            highlighted_indices, 
-            'highlighted_textbook.pdf'
+        # create the llm client
+        client = Client()
+
+        # filter unmeaningful chunks
+        all_chunks = list(chunk_sentences_with_mapping(sentences, chunk_size=40))
+        meaningful_chunks = [
+            chunk for chunk in all_chunks if is_chunk_meaningful(chunk, min_length=250, min_sentences=4, ignore_patterns=None)
+        ]
+        for i, chunk_with_idx in enumerate(meaningful_chunks):
+            prompt = build_contextual_highlight_prompt(chunk_with_idx)
+            llm_output = send_prompt_to_perplexity(prompt, api_key, model="sonar-pro")
+            highlighted_meta = parse_llm_highlight_indices(llm_output, chunk_with_idx)
+            all_highlights.extend(highlighted_meta)
+            print("Processed Percentage:", int((i+1) / len(meaningful_chunks) * 100), "%")
+        
+        print("Highlighting Completed!")
+        output_path = filedialog.asksaveasfilename(
+            defaultextension=".pdf",
+            filetypes=[("PDF files", "*.pdf")],
+            title="Save PDF as"
         )
+        if output_path:
+            # Use output_path to save your PDF
+            highlight_sentences_in_pdf(file_path, all_highlights, 
+                output_path)
+            print(f"PDF will be saved to: {output_path}")
+        else:
+            print("Save operation cancelled.")
