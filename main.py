@@ -14,6 +14,12 @@ if __name__ == "__main__":
     root = Tk()
     root.withdraw()
     file_path = filedialog.askopenfilename()
+    root.withdraw()
+    output_path = filedialog.asksaveasfilename(
+        defaultextension=".pdf",
+        filetypes=[("PDF files", "*.pdf")],
+        title="Save PDF as"
+    )
     if file_path:
         sentences = extract_sentences_with_indices(file_path)
         # For actual use, iterate over chunks:
@@ -36,12 +42,6 @@ if __name__ == "__main__":
             print("Processed Percentage:", int((i+1) / len(meaningful_chunks) * 100), "%")
         
         print("Highlighting Completed!")
-        root.withdraw()
-        output_path = filedialog.asksaveasfilename(
-            defaultextension=".pdf",
-            filetypes=[("PDF files", "*.pdf")],
-            title="Save PDF as"
-        )
         if output_path:
             # Use output_path to save your PDF
             highlight_sentences_in_pdf(file_path, all_highlights, 
