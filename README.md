@@ -18,6 +18,9 @@ With sonar-pro, it cost me $5 to highlight a 800 page textbook.
 
 ### Functionalities
 
-- [x] Automated Highlights
-- [x] Explanation comments on highlight groups  
+<input type="checkbox" checked disabled style="accent-color: green;">
+ Automated Highlights
+
+ <input type="checkbox" checked disabled style="accent-color: green;">
+Explanation comments on highlight groups  
 
