@@ -50,7 +50,7 @@ def extract_sentences_with_indices(pdf_path):
                     sentences.append((len(sentences)+1, page_num, idx, sent))
     return sentences  # (global index, page number, in-page index, sentence)
 
-def build_contextual_highlight_prompt(chunk_with_idx):
+def build_contextual_highlight_prompt(chunk_with_idx, external_contexts=None):
     """
     Builds a prompt for an LLM to highlight the most important sentences
     in the context of the full segment.
@@ -63,8 +63,16 @@ def build_contextual_highlight_prompt(chunk_with_idx):
         "Below is a segment from a scientific document. "
         "First I want you to identify the key concepts in this segment. "
         "Then I want you to identify the sentences that best explain these concepts. "
-        "Return ONLY the indices of those sentences as a comma-separated list (e.g., 2, 5, 7).\n\n"
+        "Return the top 10 indices of those sentences as a comma-separated list (e.g., 2, 5, 7).\n\n"
         f"Segment context:\n{segment_text.strip()}\n\n"
+    )
+    if external_contexts:
+        prompt += "\nRelated context from web:\n"
+        for topic, snippets in external_contexts.items():
+            prompt += f"Topic: {topic}\n"
+            for snippet in snippets:
+                prompt += f"- {snippet}\n"
+    prompt += (
         "Numbered sentences:\n" +
         "\n".join([f"{local_idx}: {sentence}" for local_idx, _, _, _, sentence in chunk_with_idx])
     )
