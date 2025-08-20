@@ -15,3 +15,9 @@ You should have a json file with the format as follows
 
 Be aware of the model type you use or the credits run up real fast!
 With sonar-pro, it cost me $5 to highlight a 800 page textbook.
+
+### Functionalities
+
+- [x] Automated Highlights
+- [x] Explanation comments on highlight groups  
+
