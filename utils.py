@@ -117,10 +117,27 @@ def highlight_sentences_in_pdf(pdf_path, highlight_groups, page_word_map, output
                 annot.set_opacity(0.2)
                 annot.update()
                 if not note_added and idx_n == 0 and bbox_i == 0:
-                    try:
-                        note_annot = page.add_text_annot(rect.bl, explanation, icon="Comment")
-                    except TypeError:
-                        note_annot = page.add_text_annot(rect.bl, explanation)
-                    note_annot.update()
-                    note_added = True
+                    if not note_added and idx_n == 0 and bbox_i == 0:
+                        # Decide attachment side based on highlight position
+                        margin_offset = 30  # distance from left/right edge, adjust as needed
+                        page_rect = page.rect
+                        highlight_center_x = (x0 + x1) / 2
+
+                        # If highlight center is on the right half, attach comment to right margin; else, to left margin
+                        if highlight_center_x > (page_rect.x0 + page_rect.x1) / 2:
+                            # Attach to right
+                            icon_x = page_rect.x1 - margin_offset
+                        else:
+                            # Attach to left
+                            icon_x = page_rect.x0 + margin_offset
+
+                        # Align vertically with highlight top
+                        icon_y = y0
+                        margin_point = fitz.Point(icon_x, icon_y)
+                        try:
+                            note_annot = page.add_text_annot(margin_point, explanation, icon="Comment")
+                        except TypeError:
+                            note_annot = page.add_text_annot(margin_point, explanation)
+                        note_annot.update()
+                        note_added = True
     doc.save(output_path)
