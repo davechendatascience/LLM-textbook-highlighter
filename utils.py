@@ -1,132 +1,103 @@
-from tkinter import Tk, filedialog
-import pdfplumber
-from nltk.tokenize import sent_tokenize
 import fitz  # PyMuPDF
-import fasttext
-import re
-from collections import Counter
+from nltk.tokenize import sent_tokenize
+from collections import defaultdict
 
-lang_detect_model = fasttext.load_model('models/lid.176.bin')
-
-def chinese_sentence_tokenizer(text):
-    # Split by Chinese full stop, exclamation, and question marks (and keep punctuation)
-    fragments = re.split(r'(。|！|\!|？|\?)', text)
-    sentences = []
-    for i in range(0, len(fragments)-1, 2):
-        sentence = fragments[i] + fragments[i+1]
-        if sentence.strip():
-            sentences.append(sentence.strip())
-    # Handle last fragment
-    if len(fragments) % 2 != 0 and fragments[-1].strip():
-        sentences.append(fragments[-1].strip())
-    return sentences
-
-def majority_vote_language(text):
-    lines = [line for line in text.split('\n') if line.strip()]
-    langs = [lang_detect_model.predict(line)[0][0].replace('__label__','') for line in lines]
-    most_common = Counter(langs).most_common(1)
-    return most_common[0][0] if most_common else None
-
-def auto_sentence_tokenize(text, lang_detect_model):
-    # majority vote the
-    lang = majority_vote_language(text)
-    if lang == 'zh-cn' or lang == 'zh':
-        return chinese_sentence_tokenizer(text)
-    else:
-        # Use English or other European language tokenizer
-        from nltk.tokenize import sent_tokenize
-        return sent_tokenize(text)
-
-
-def extract_sentences_with_indices(pdf_path):
-    sentences = []
-    with pdfplumber.open(pdf_path) as pdf:
-        for page_num, page in enumerate(pdf.pages):
-            text = page.extract_text()
-            if text:
-                page_sentences = auto_sentence_tokenize(text, lang_detect_model=lang_detect_model)
-                for idx, sent in enumerate(page_sentences):
-                    # (global_index, page_number, local_index, sentence)
-                    sentences.append((len(sentences)+1, page_num, idx, sent))
-    return sentences  # (global index, page number, in-page index, sentence)
-
-def build_contextual_highlight_prompt(chunk_with_idx, external_contexts=None):
+def extract_sentences_and_chunks(pdf_path, chunk_size=40):
     """
-    Builds a prompt for an LLM to highlight the most important sentences
-    in the context of the full segment.
-    chunk_with_idx: [(local_idx, global_idx, page_num, local_in_page, sentence), ...]
+    Extract sentences and map them to grouped word bounding boxes from the PDF,
+    returning sentence chunks for LLM and a page_word_map for annotation/highlighting.
     """
-    # Concatenate all sentences in the segment for context
-    segment_text = " ".join([sentence for _, _, _, _, sentence in chunk_with_idx])
-
-    prompt = (
-        "Below is a segment from a scientific document. "
-        "First I want you to identify the key concepts in this segment. "
-        "Then I want you to identify the sentences that best explain these concepts. "
-        "Return the top 10 indices of those sentences as a comma-separated list (e.g., 2, 5, 7).\n\n"
-        f"Segment context:\n{segment_text.strip()}\n\n"
-    )
-    if external_contexts:
-        prompt += "\nRelated context from web:\n"
-        for topic, snippets in external_contexts.items():
-            prompt += f"Topic: {topic}\n"
-            for snippet in snippets:
-                prompt += f"- {snippet}\n"
-    prompt += (
-        "Numbered sentences:\n" +
-        "\n".join([f"{local_idx}: {sentence}" for local_idx, _, _, _, sentence in chunk_with_idx])
-    )
-    return prompt
-
-def parse_llm_highlight_indices(llm_output, chunk_with_idx):
-    # Extract local indices from LLM response
-    indices = [int(i) for i in re.findall(r'\b\d+\b', llm_output)]
-    # Map back to global indices and metadata
-    highlighted_meta = [
-        (global_idx, page_num, local_in_page, sentence)
-        for local_chunk_idx, global_idx, page_num, local_in_page, sentence in chunk_with_idx
-        if local_chunk_idx in indices
-    ]
-    return highlighted_meta
-
-def chunk_sentences_with_mapping(sentences, chunk_size=40):
-    # sentences: list of (global, page_num, local_in_page, sentence)
-    for start in range(0, len(sentences), chunk_size):
-        chunk = sentences[start:start+chunk_size]
-        # produce chunk list of (local_chunk_idx, global_idx, page_num, local_in_page, sentence)
-        chunk_with_idx = [
-            (i+1, s[0], s[1], s[2], s[3])  # local index for LLM, plus all metadata
-            for i, s in enumerate(chunk)
-        ]
-        yield chunk_with_idx
-
-def is_chunk_meaningful(chunk_sentences, min_length=250, min_sentences=4, ignore_patterns=None):
-    text = " ".join([s[4
-    ] for s in chunk_sentences])  # s[1] is the sentence
-    # Basic length check
-    if len(text.strip()) < min_length or len(chunk_sentences) < min_sentences:
-        return False
-    # Pattern-based ignoring (e.g., “References”, “Table of Contents”)
-    if ignore_patterns:
-        for pat in ignore_patterns:
-            if pat.lower() in text.lower():
-                return False
-    # Extra: Check for repeated punctuation, numbers, or list-like content
-    non_boilerplate = sum(
-        1 for _, _, _, _, sent in chunk_sentences
-        if len(sent.split()) > 3 and not sent.strip().isdigit()
-    )
-    if non_boilerplate/min_sentences < 0.5:
-        return False
-    return True
-
-def highlight_sentences_in_pdf(pdf_path, highlighted_meta, output_path):
-    import fitz  # PyMuPDF
     doc = fitz.open(pdf_path)
-    for global_idx, page_num, local_in_page, sentence in highlighted_meta:
+    page_word_map = {}
+    sentences = []
+    global_idx = 0
+
+    for page_num in range(len(doc)):
         page = doc[page_num]
-        areas = page.search_for(sentence)
-        for inst in areas:
-            page.add_highlight_annot(inst)
-    doc.save(output_path, deflate=True)
-    doc.close()
+        words_raw = page.get_text("words")  # list of (x0, y0, x1, y1, word, block_no, line_no, word_no)
+        words = []
+        for w in words_raw:
+            print(w)
+            words.append({
+                "text": w[4],
+                "x0": w[0],
+                "y0": w[1],
+                "x1": w[2],
+                "y1": w[3],
+                "block_no": w[5],
+                "line_no": w[6],
+                "word_no": w[7],
+            })
+
+        page_word_map[page_num] = words
+        if not words:
+            continue
+        page_text = " ".join(w["text"] for w in words)
+        sents = sent_tokenize(page_text)
+        word_pointer = 0
+        for s in sents:
+            s_words = s.split()
+            indices = []
+            idx_pointer = word_pointer
+            for word in s_words:
+                while idx_pointer < len(words):
+                    if words[idx_pointer]["text"] == word:
+                        indices.append(idx_pointer)
+                        idx_pointer += 1
+                        break
+                    idx_pointer += 1
+            if indices:
+                sentences.append({
+                    "global_idx": global_idx,
+                    "page_num": page_num,
+                    "sentence": s,
+                    "word_indices": indices
+                })
+                global_idx += 1
+            word_pointer = idx_pointer
+
+    # Chunk sentences for LLM prompt
+    chunks = []
+    for start in range(0, len(sentences), chunk_size):
+        chunks.append(sentences[start:start+chunk_size])
+    return sentences, chunks, page_word_map
+
+def get_sentence_bboxes(word_list, word_indices, line_tol=2, margin=1):
+    # Assumes word_list is a list of dicts as produced above
+    sentence_words = [word_list[i] for i in word_indices]
+    if not sentence_words:
+        return []
+    from collections import defaultdict
+    line_groups = defaultdict(list)
+    for w in sentence_words:
+        line_key = round(w["y0"] / line_tol)
+        line_groups[line_key].append(w)
+    bboxes = []
+    for group in line_groups.values():
+        x0 = min(w["x0"] for w in group) - margin
+        x1 = max(w["x1"] for w in group) + margin
+        y0 = min(w["y0"] for w in group) - margin
+        y1 = max(w["y1"] for w in group) + margin
+        bboxes.append((x0, y0, x1, y1))
+    return bboxes
+
+def highlight_sentences_in_pdf(pdf_path, highlighted_sents, page_word_map, output_path, color=(1, 1, 0)):
+    """
+    Add rectangle highlights for the specified sentences using PyMuPDF.
+    color: tuple of (r, g, b) with floats 0-1 (e.g. (1,1,0)=yellow), opacity 0.2 for highlight effect.
+    """
+    doc = fitz.open(pdf_path)
+    for sent in highlighted_sents:
+        page_num = sent['page_num']
+        indices = sent['word_indices']
+        words = page_word_map.get(page_num, [])
+        bboxes = get_sentence_bboxes(words, indices, line_tol=2, margin=1)
+        page = doc[page_num]
+        for bbox in bboxes:
+            x0, y0, x1, y1 = bbox
+            rect = fitz.Rect(x0, y0, x1, y1)
+            annot = page.add_rect_annot(rect)
+            annot.set_colors(stroke=color, fill=color)
+            annot.set_opacity(0.2)
+            annot.update()
+    doc.save(output_path)
