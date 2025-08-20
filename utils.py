@@ -17,7 +17,6 @@ def extract_sentences_and_chunks(pdf_path, chunk_size=40):
         words_raw = page.get_text("words")  # list of (x0, y0, x1, y1, word, block_no, line_no, word_no)
         words = []
         for w in words_raw:
-            print(w)
             words.append({
                 "text": w[4],
                 "x0": w[0],
