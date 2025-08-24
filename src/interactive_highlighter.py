@@ -21,7 +21,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'utils'))
 from llm import send_prompt_to_gemini, send_prompt_to_perplexity
 from config import load_secrets, get_available_apis, DEFAULT_SETTINGS
 from pdf_processor import PDFProcessor
-from ocr_processor import get_ocr_processor
+from hybrid_ocr_processor import HybridOCRProcessor
 
 class InteractivePDFHighlighter:
     def __init__(self, root=None):
@@ -52,9 +52,9 @@ class InteractivePDFHighlighter:
         # PDF processor with advanced extraction
         self.pdf_processor = PDFProcessor(use_advanced_extraction=True)
         
-        # OCR processor for enhanced mathematical extraction
-        self.ocr_processor = get_ocr_processor()
-        self.use_ocr = False  # Default to traditional extraction
+        # Hybrid OCR processor for enhanced text and math extraction
+        self.hybrid_ocr_processor = HybridOCRProcessor()
+        self.use_hybrid_ocr = False  # Default to traditional extraction
         
         # UI scaling factors (image to PDF coordinate conversion)
         self.scale_x = 1.0
@@ -111,20 +111,26 @@ class InteractivePDFHighlighter:
         ttk.Button(toolbar, text="◀ Prev", command=self.prev_page).pack(side=tk.LEFT, padx=5)
         ttk.Button(toolbar, text="Next ▶", command=self.next_page).pack(side=tk.LEFT, padx=5)
         
-        # OCR toggle
+        # Hybrid OCR toggle
         self.ocr_var = tk.BooleanVar(value=False)
         ocr_frame = ttk.Frame(toolbar)
         ocr_frame.pack(side=tk.LEFT, padx=(20, 5))
         
-        ttk.Label(ocr_frame, text="OCR:").pack(side=tk.LEFT, padx=(0, 2))
+        ttk.Label(ocr_frame, text="Hybrid OCR:").pack(side=tk.LEFT, padx=(0, 2))
         ocr_check = ttk.Checkbutton(ocr_frame, variable=self.ocr_var, command=self.toggle_ocr)
         ocr_check.pack(side=tk.LEFT)
         
-        if not self.ocr_processor.is_available():
+        # Check OCR availability
+        ocr_available = (self.hybrid_ocr_processor.general_ocr is not None)
+        math_ocr_available = (self.hybrid_ocr_processor.math_processor and self.hybrid_ocr_processor.math_model)
+        
+        if not ocr_available:
             ocr_check.configure(state='disabled')
             ttk.Label(ocr_frame, text="(not available)", foreground='gray').pack(side=tk.LEFT, padx=(2, 0))
+        elif math_ocr_available:
+            ttk.Label(ocr_frame, text="(General + Math)", foreground='green').pack(side=tk.LEFT, padx=(2, 0))
         else:
-            ttk.Label(ocr_frame, text="(EasyOCR)", foreground='green').pack(side=tk.LEFT, padx=(2, 0))
+            ttk.Label(ocr_frame, text="(General only)", foreground='orange').pack(side=tk.LEFT, padx=(2, 0))
         
         # Status
         self.status_label = ttk.Label(toolbar, text="No PDF loaded")
@@ -158,7 +164,7 @@ class InteractivePDFHighlighter:
         self.pdf_canvas.bind("<ButtonRelease-1>", self.on_mouse_up)
         
         # Instructions
-        instructions = ttk.Label(pdf_frame, text="Click and drag to select text regions for highlighting")
+        instructions = ttk.Label(pdf_frame, text="Click and drag to select text regions. Enable Hybrid OCR for better math formula extraction.")
         instructions.pack(pady=(10, 0))
         
         parent.add(pdf_frame, weight=2)
@@ -453,8 +459,8 @@ class InteractivePDFHighlighter:
             # SOLUTION: Instead of precise clipping, extract text by finding lines that intersect
             page = self.pdf_doc[self.current_page]
             
-            # Use the centralized PDF processor for smart text extraction
-            text = self.extract_text_robust(page, selection_rect)
+            # Use hybrid OCR for smart text extraction
+            text = self.extract_text_with_hybrid_ocr(page, selection_rect)
             
             if text:
                 # Display extracted text
@@ -470,48 +476,59 @@ class InteractivePDFHighlighter:
             messagebox.showerror("Error", f"Could not extract text: {e}")
             self.clear_selection()
     
-    def extract_text_robust(self, page, rect):
-        """Text extraction with optional OCR enhancement"""
+    def extract_text_with_hybrid_ocr(self, page, rect):
+        """Extract text using hybrid OCR approach"""
         try:
             print(f"DEBUG: Extracting from rect: {rect}")
             
-            if self.use_ocr and self.ocr_processor.is_available():
-                # Use OCR-enhanced extraction
-                result = self.ocr_processor.extract_with_fallback(page, rect)
-                text = result['recommended_text']
+            if self.use_hybrid_ocr and self.hybrid_ocr_processor.general_ocr:
+                # Use hybrid OCR extraction
+                result = self.hybrid_ocr_processor.extract_region_with_hybrid_ocr(page, rect)
+                text = result.get('text', '')
+                method = result.get('method', 'unknown')
+                confidence = result.get('confidence', 0)
                 
-                # Debug info
-                method = result['method_used']
-                print(f"DEBUG: OCR method used: {method}")
-                if 'ocr_confidence' in result:
-                    print(f"DEBUG: OCR confidence: {result['ocr_confidence']:.2f}")
-                print(f"DEBUG: Extracted text: '{text[:100]}...' ({len(text)} chars)")
+                print(f"DEBUG: Hybrid OCR used - Method: {method}, Confidence: {confidence}")
+                print(f"DEBUG: Result: '{text[:100]}...' ({len(text)} chars)")
                 
+                if 'math_regions_found' in result:
+                    print(f"DEBUG: Math regions enhanced: {result['math_regions_found']}")
+                
+                return text
             else:
-                # Use standard fitz extraction with clipping rectangle
+                # Use standard fitz extraction
                 text = page.get_text("text", clip=rect).strip()
                 print(f"DEBUG: Using traditional fitz extraction")
-                print(f"DEBUG: Extracted text: '{text[:100]}...' ({len(text)} chars)")
-            
-            return text
+                print(f"DEBUG: Result: '{text[:100]}...' ({len(text)} chars)")
+                return text
             
         except Exception as e:
-            print(f"Error in text extraction: {e}")
-            return ""
+            print(f"Error in hybrid text extraction: {e}")
+            # Fallback to regular extraction
+            try:
+                text = page.get_text("text", clip=rect).strip()
+                print(f"DEBUG: Fallback extraction successful")
+                return text
+            except Exception as fallback_error:
+                print(f"Error in fallback extraction: {fallback_error}")
+                return ""
     
     def toggle_ocr(self):
-        """Toggle OCR usage for text extraction"""
-        self.use_ocr = self.ocr_var.get()
-        status = "enabled" if self.use_ocr else "disabled"
-        print(f"DEBUG: OCR extraction {status}")
+        """Toggle hybrid OCR usage for text extraction"""
+        self.use_hybrid_ocr = self.ocr_var.get()
+        status = "enabled" if self.use_hybrid_ocr else "disabled"
+        print(f"DEBUG: Hybrid OCR extraction {status}")
         
         # Update status
-        if self.use_ocr and self.ocr_processor.is_available():
-            self.status_label.config(text="OCR extraction enabled")
+        if self.use_hybrid_ocr and self.hybrid_ocr_processor.general_ocr:
+            if self.hybrid_ocr_processor.math_processor:
+                self.status_label.config(text="Hybrid OCR enabled (General + Math)")
+            else:
+                self.status_label.config(text="Hybrid OCR enabled (General only)")
         else:
             self.status_label.config(text="Traditional extraction")
-            if self.use_ocr:
-                print("WARNING: OCR requested but not available")
+            if self.use_hybrid_ocr:
+                print("WARNING: Hybrid OCR requested but not available")
     
     def minimal_symbol_fix(self, text):
         """Apply only minimal symbol fixing for clear PDF corruption artifacts"""

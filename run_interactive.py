@@ -14,8 +14,8 @@ from interactive_highlighter import InteractivePDFHighlighter
 
 def main():
     """Launch the interactive highlighter"""
-    print("LLM Textbook Highlighter - Interactive Mode with OCR")
-    print("=" * 55)
+    print("LLM Textbook Highlighter - Interactive Mode with Hybrid OCR")
+    print("=" * 60)
     
     # Check API availability
     secrets = load_secrets()
@@ -29,15 +29,26 @@ def main():
         print(f"Available APIs: {', '.join(available_apis)}")
         print()
     
-    # Check OCR availability
-    from ocr_processor import get_ocr_processor
-    ocr = get_ocr_processor()
-    if ocr.is_available():
-        print("[OCR] EasyOCR available for enhanced mathematical text extraction")
-        print("      Toggle OCR in the toolbar to enable for complex mathematical content")
+    # Check Hybrid OCR availability
+    from hybrid_ocr_processor import HybridOCRProcessor
+    hybrid_ocr = HybridOCRProcessor()
+    
+    print("[Hybrid OCR] Checking availability...")
+    if hybrid_ocr.general_ocr:
+        ocr_type = hybrid_ocr.general_ocr if isinstance(hybrid_ocr.general_ocr, str) else "EasyOCR"
+        print(f"[Hybrid OCR] General OCR ({ocr_type}) available")
+        
+        if hybrid_ocr.math_processor and hybrid_ocr.math_model:
+            print("[Hybrid OCR] Math OCR (Pix2Text) available")
+            print("             Two-stage OCR: General OCR + specialized math enhancement")
+        else:
+            print("[Hybrid OCR] Math OCR not available - general OCR only")
+            print("             Install with: pip install transformers>=4.37.0 optimum[onnxruntime]")
     else:
-        print("[OCR] EasyOCR not available - install with: pip install easyocr")
-        print("      Will use traditional PyMuPDF text extraction")
+        print("[Hybrid OCR] No OCR engines available")
+        print("             Install Tesseract: https://github.com/UB-Mannheim/tesseract/wiki")
+        print("             Or install EasyOCR: pip install easyocr")
+        print("             Will use traditional PyMuPDF text extraction")
     print()
     
     # Launch the GUI
