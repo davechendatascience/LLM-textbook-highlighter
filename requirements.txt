@@ -2,9 +2,6 @@ numpy
 pdfplumber
 PyMuPDF
 nltk
-keybert
 requests
 fasttext-wheel
-google-genai
 pillow
-easyocr

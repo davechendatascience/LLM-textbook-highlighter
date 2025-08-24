@@ -19,7 +19,7 @@ DEFAULT_SETTINGS = {
     "pdf_display_width": 800,
     "selection_color": "#FFD700",
     "highlight_alpha": 0.3,
-    "default_model": "gemini-2.0-flash-exp",
+    "default_model": "sonar-reasoning",
     "enable_web_search": False,  # Cost optimization
     "max_text_length": 4000,
     "debug_mode": False
@@ -27,10 +27,6 @@ DEFAULT_SETTINGS = {
 
 # API Configuration
 API_COSTS = {
-    "gemini": {
-        "with_search": 0.035,      # $35 per 1000 queries
-        "without_search": 0.0075   # Much cheaper for basic queries
-    },
     "perplexity": {
         "with_search": 0.005,      # $5 per 1000 queries  
         "without_search": 0.001    # $1 per 1000 queries
@@ -55,8 +51,6 @@ def get_available_apis():
     secrets = load_secrets()
     available = []
     
-    if 'gemini_api_key' in secrets:
-        available.append('gemini')
     if 'perplexity_api_key' in secrets:
         available.append('perplexity')
         

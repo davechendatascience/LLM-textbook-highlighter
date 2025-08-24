@@ -1,0 +1,30 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(python tests:*)",
+      "Bash(pip install:*)",
+      "Bash(venvScripts:*)",
+      "Bash(venv/Scripts/python:*)",
+      "Bash(move interactive_highlighter.py src/)",
+      "Bash(move llm.py src/)",
+      "Bash(move utils.py src/)",
+      "Bash(\"venv/Scripts/pip\" install -r requirements.txt)",
+      "Bash(\"venv/Scripts/pip\" uninstall google-generativeai -y)",
+      "Bash(\"venv/Scripts/pip\" install google-genai)",
+      "Bash(\"venv/Scripts/python\" test_google_genai.py)",
+      "Bash(\"venv/Scripts/python\" test_interactive_launch.py)",
+      "Bash(\"venv/Scripts/python\" tests/test_restructured.py)",
+      "Bash(\"venv/Scripts/python\" tests/test_real_textbook.py)",
+      "Bash(\"venv/Scripts/pip\" install reportlab)",
+      "Bash(\"venv/Scripts/python\" test_ocr_debug.py)",
+      "Bash(\"venv/Scripts/python\" -c \"import transformers, optimum; print(''transformers and optimum available'')\")",
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(\"venv/Scripts/python\" test_contextual_prompts.py)",
+      "Bash(\"venv/Scripts/python\" test_mouse_handling.py)",
+      "Bash(\"venv/Scripts/python\" test_spatial_integration.py)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}

@@ -1,6 +1,6 @@
 # LLM Textbook Highlighter
 
-An intelligent PDF highlighting tool powered by Google's Gemini AI that can process textbooks and documents of any size. The system features advanced mathematical symbol extraction, interactive GUI, and both automated batch processing and manual highlighting modes. Built with the modern `google-genai` SDK for optimal performance and web search capabilities.
+A simplified, intelligent PDF highlighting and question-answering tool powered by Perplexity AI. The system features fast text extraction, interactive GUI, and smart question generation with customizable answer lengths. Optimized for reliability and ease of use.
 
 ## 🚀 Quick Start
 
@@ -8,6 +8,8 @@ An intelligent PDF highlighting tool powered by Google's Gemini AI that can proc
 ```bash
 python run_interactive.py
 ```
+
+Features a clean, intuitive interface using **fitz (PyMuPDF)** for fast and reliable text extraction from PDF documents.
 
 ### Batch Processing Mode  
 ```bash
@@ -20,18 +22,13 @@ python main.py
 LLM-textbook-highlighter/
 ├── src/                     # Core application modules
 │   ├── config.py           # Configuration and settings
-│   ├── interactive_highlighter.py  # GUI application
-│   ├── llm.py              # LLM API integrations  
-│   ├── pdf_processor.py    # Centralized PDF processing
+│   ├── simple_interactive_highlighter.py  # Simplified GUI application
+│   ├── llm.py              # Perplexity API integration  
 │   └── utils.py            # Utility functions
-├── extraction_methods/      # PDF text extraction algorithms
-│   ├── advanced_extraction.py  # Multi-method extraction testing
-│   └── symbol_fixer.py     # Mathematical symbol correction
-├── utils/                   # Shared utilities
-├── tests/                   # Test suite and sample PDFs
+├── tests/                   # Test PDFs for development
 ├── run_interactive.py       # Interactive GUI launcher
 ├── main.py                 # Batch processing entry point
-└── test_restructured.py    # System validation script
+└── secrets.json            # API keys (create this file)
 ```
 
 ## 🔧 Installation
@@ -52,29 +49,27 @@ Create a `secrets.json` file in the root directory:
 
 ```json
 {
-    "gemini_api_key": "your_gemini_api_key_here",
     "perplexity_api_key": "your_perplexity_api_key_here"
 }
 ```
 
-**Cost Optimization:**
-- Gemini 2.0 Flash (without web search): ~$0.0075 per query (recommended)
-- Gemini with web search grounding: $35 per 1,000 queries  
-- Perplexity with search: $5 per 1,000 queries
-- Perplexity without search: $1 per 1,000 queries
-
-**Note:** Built with the modern `google-genai` SDK (v1.31+) which provides cleaner API access and better web search integration compared to the older `google-generativeai` package.
+**Available Models:**
+- **sonar**: Fast question generation (~$1 per 1,000 queries)
+- **sonar-reasoning**: Detailed answers (~$5 per 1,000 queries)
+- Web search enabled for comprehensive responses
 
 ## ✨ Features
 
 ### Interactive GUI Mode
-- 📖 Visual PDF navigation and rendering  
-- 🖱️ Click-and-drag text selection
-- 🔍 Advanced mathematical symbol extraction
-- 🤖 AI-powered question generation
-- 💬 Custom Q&A with web search toggle
-- 📝 Session notes with export capabilities
-- 🧮 Smart text extraction for LaTeX/mathematical content
+- 📖 Visual PDF navigation with page selector
+- 🖱️ Click-and-drag text selection  
+- 🎯 **Fast fitz extraction**: Reliable PyMuPDF text extraction
+- 🤖 **Smart question generation**: AI suggests relevant questions
+- 💬 **Custom Q&A**: Ask your own questions with web search
+- 🔧 **Answer length control**: Choose short, medium, long, or comprehensive responses
+- 📝 **Session tracking**: Automatic note-keeping with timestamps
+- 🎨 **Font size control**: Adjustable text size for better readability
+- 📜 **Resizable panels**: Drag dividers to customize layout
 
 ### Batch Processing Mode  
 - 📚 Process entire textbooks (hundreds of pages)
@@ -82,11 +77,11 @@ Create a `secrets.json` file in the root directory:
 - 💬 Contextual explanation comments
 - 📊 Grouped highlight organization
 
-### Advanced Text Extraction
-- 🔬 Multiple PyMuPDF extraction methods (standard, dictionary, blocks, words, rawdict)
-- 🔧 Automatic symbol corruption fixing (�P → ≠, Sum( → Σ)
-- 📐 Mathematical notation preservation
-- 🎯 Smart extraction method selection based on content analysis
+### Simplified Text Extraction
+- ⚡ **Fast and reliable**: Uses PyMuPDF (fitz) for consistent text extraction
+- 🎯 **Word wrapping**: Text properly contained within display areas
+- 📋 **No complex setup**: Works out of the box without OCR dependencies
+- 🔍 **Consistent results**: Predictable extraction across different PDF types
 
 ## 🧪 Testing
 
@@ -126,11 +121,16 @@ The system includes advanced support for mathematical notation:
 
 ### Interactive Highlighting
 1. Launch: `python run_interactive.py`
-2. Load PDF using the file menu
-3. Navigate pages with the page selector
-4. Click and drag to select text regions
-5. Get AI explanations and suggested questions
-6. Export session notes
+2. **Check OCR Status**: System displays available OCR capabilities on startup
+   - "General + Math": Full hybrid OCR with mathematical enhancement
+   - "General only": Standard OCR without specialized math processing  
+   - "Traditional": PyMuPDF extraction only
+3. Load PDF using the file menu
+4. Navigate pages with the page selector
+5. **Enable Hybrid OCR** (optional): Toggle for enhanced text extraction
+6. Click and drag to select text regions
+7. Get AI explanations and suggested questions
+8. Export session notes
 
 ### Batch Processing
 1. Run: `python main.py`

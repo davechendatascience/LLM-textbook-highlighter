@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
-Interactive PDF Highlighter with GUI
-Allows users to select pages, highlight regions, and get LLM explanations
+Simplified Interactive PDF Highlighter with GUI - only fitz text extraction
+Allows users to select regions and get LLM explanations using Perplexity API only
 """
 
 import tkinter as tk
@@ -18,18 +18,16 @@ sys.path.insert(0, os.path.dirname(__file__))
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'utils'))
 
-from llm import send_prompt_to_gemini, send_prompt_to_perplexity
+from llm import send_prompt_to_perplexity
 from config import load_secrets, get_available_apis, DEFAULT_SETTINGS
-from pdf_processor import PDFProcessor
-from hybrid_ocr_processor import HybridOCRProcessor
 
-class InteractivePDFHighlighter:
+class SimpleInteractivePDFHighlighter:
     def __init__(self, root=None):
         if root is None:
             self.root = tk.Tk()
         else:
             self.root = root
-        self.root.title("Interactive PDF Highlighter")
+        self.root.title("Simple Interactive PDF Highlighter - Fitz Only")
         self.root.geometry(f"{DEFAULT_SETTINGS['window_width']}x{DEFAULT_SETTINGS['window_height']}")
         
         # PDF and session state
@@ -37,24 +35,23 @@ class InteractivePDFHighlighter:
         self.current_page = 0
         self.pdf_path = ""
         self.session_notes = []
-        self.highlights = []
         
-        # Highlight selection state
+        # Simple selection system - only text selection
+        self.is_selecting = False
         self.selection_start = None
         self.selection_end = None
         self.selection_rect = None
-        self.is_selecting = False
+        self.selection_complete = False
         
-        # LLM configuration
+        # LLM configuration - Perplexity only
         self.api_keys = load_secrets()
         self.available_apis = get_available_apis()
         
-        # PDF processor with advanced extraction
-        self.pdf_processor = PDFProcessor(use_advanced_extraction=True)
+        # Store suggested questions
+        self.suggested_questions_list = []
         
-        # Hybrid OCR processor for enhanced text and math extraction
-        self.hybrid_ocr_processor = HybridOCRProcessor()
-        self.use_hybrid_ocr = False  # Default to traditional extraction
+        # Store text widgets for font size control
+        self.text_widgets = []
         
         # UI scaling factors (image to PDF coordinate conversion)
         self.scale_x = 1.0
@@ -67,11 +64,6 @@ class InteractivePDFHighlighter:
     def run(self):
         """Start the GUI application"""
         self.root.mainloop()
-    
-    def load_api_keys(self):
-        """Load API keys from secrets.json (deprecated - now using config.py)"""
-        # This method is now handled by config.py
-        pass
     
     def setup_ui(self):
         """Setup the main UI layout"""
@@ -89,299 +81,323 @@ class InteractivePDFHighlighter:
         # Left panel - PDF viewer
         self.setup_pdf_viewer(paned)
         
-        # Right panel - Notes and Q&A
-        self.setup_notes_panel(paned)
+        # Right panel - Controls and text output
+        self.setup_control_panel(paned)
     
     def setup_toolbar(self, parent):
-        """Setup the top toolbar"""
+        """Setup the toolbar with file operations"""
         toolbar = ttk.Frame(parent)
         toolbar.pack(fill=tk.X, pady=(0, 10))
         
-        # File operations
-        ttk.Button(toolbar, text="Open PDF", command=self.open_pdf).pack(side=tk.LEFT, padx=(0, 5))
-        ttk.Button(toolbar, text="Save Session", command=self.save_session).pack(side=tk.LEFT, padx=5)
+        ttk.Button(toolbar, text="Open PDF", command=self.open_pdf).pack(side=tk.LEFT, padx=(0, 10))
+        ttk.Button(toolbar, text="Previous Page", command=self.prev_page).pack(side=tk.LEFT, padx=(0, 5))
         
-        # Page navigation
-        ttk.Label(toolbar, text="Page:").pack(side=tk.LEFT, padx=(20, 5))
-        self.page_var = tk.StringVar()
-        self.page_combo = ttk.Combobox(toolbar, textvariable=self.page_var, width=5, state="readonly")
-        self.page_combo.pack(side=tk.LEFT, padx=5)
-        self.page_combo.bind('<<ComboboxSelected>>', self.on_page_change)
+        self.page_label = ttk.Label(toolbar, text="Page: 0 / 0")
+        self.page_label.pack(side=tk.LEFT, padx=(5, 5))
         
-        ttk.Button(toolbar, text="◀ Prev", command=self.prev_page).pack(side=tk.LEFT, padx=5)
-        ttk.Button(toolbar, text="Next ▶", command=self.next_page).pack(side=tk.LEFT, padx=5)
+        ttk.Button(toolbar, text="Next Page", command=self.next_page).pack(side=tk.LEFT, padx=(5, 5))
         
-        # Hybrid OCR toggle
-        self.ocr_var = tk.BooleanVar(value=False)
-        ocr_frame = ttk.Frame(toolbar)
-        ocr_frame.pack(side=tk.LEFT, padx=(20, 5))
+        # Page selector
+        ttk.Label(toolbar, text="Go to:").pack(side=tk.LEFT, padx=(10, 5))
+        self.page_entry = tk.Entry(toolbar, width=5)
+        self.page_entry.pack(side=tk.LEFT, padx=(0, 5))
+        self.page_entry.bind("<Return>", self.go_to_page)
+        ttk.Button(toolbar, text="Go", command=self.go_to_page).pack(side=tk.LEFT, padx=(0, 10))
         
-        ttk.Label(ocr_frame, text="Hybrid OCR:").pack(side=tk.LEFT, padx=(0, 2))
-        ocr_check = ttk.Checkbutton(ocr_frame, variable=self.ocr_var, command=self.toggle_ocr)
-        ocr_check.pack(side=tk.LEFT)
+        # Selection controls
+        ttk.Separator(toolbar, orient='vertical').pack(side=tk.LEFT, fill=tk.Y, padx=(10, 10))
+        ttk.Button(toolbar, text="Clear Selection", command=self.clear_selection).pack(side=tk.LEFT, padx=(0, 10))
+        ttk.Button(toolbar, text="Extract Text", command=self.extract_selected_text).pack(side=tk.LEFT, padx=(0, 10))
         
-        # Check OCR availability
-        ocr_available = (self.hybrid_ocr_processor.general_ocr is not None)
-        math_ocr_available = (self.hybrid_ocr_processor.math_processor and self.hybrid_ocr_processor.math_model)
+        # Font size selector
+        ttk.Separator(toolbar, orient='vertical').pack(side=tk.LEFT, fill=tk.Y, padx=(10, 10))
+        ttk.Label(toolbar, text="Font size:").pack(side=tk.LEFT, padx=(0, 5))
         
-        if not ocr_available:
-            ocr_check.configure(state='disabled')
-            ttk.Label(ocr_frame, text="(not available)", foreground='gray').pack(side=tk.LEFT, padx=(2, 0))
-        elif math_ocr_available:
-            ttk.Label(ocr_frame, text="(General + Math)", foreground='green').pack(side=tk.LEFT, padx=(2, 0))
-        else:
-            ttk.Label(ocr_frame, text="(General only)", foreground='orange').pack(side=tk.LEFT, padx=(2, 0))
+        self.font_size_var = tk.StringVar(value="10")
+        self.font_size_dropdown = ttk.Combobox(toolbar, textvariable=self.font_size_var, width=8, state="readonly")
+        self.font_size_dropdown['values'] = ["8", "9", "10", "11", "12", "14", "16", "18", "20"]
+        self.font_size_dropdown.pack(side=tk.LEFT, padx=(0, 10))
+        self.font_size_dropdown.bind("<<ComboboxSelected>>", self.on_font_size_change)
         
-        # Status
-        self.status_label = ttk.Label(toolbar, text="No PDF loaded")
-        self.status_label.pack(side=tk.RIGHT, padx=10)
+        # API status
+        ttk.Separator(toolbar, orient='vertical').pack(side=tk.LEFT, fill=tk.Y, padx=(10, 10))
+        api_status = "✓ Perplexity" if 'perplexity' in self.available_apis else "✗ No API"
+        ttk.Label(toolbar, text=f"API: {api_status}").pack(side=tk.LEFT)
     
     def setup_pdf_viewer(self, parent):
-        """Setup the PDF viewer panel"""
-        pdf_frame = ttk.LabelFrame(parent, text="PDF Viewer", padding=10)
+        """Setup the PDF viewer canvas"""
+        pdf_frame = ttk.Frame(parent)
+        parent.add(pdf_frame, weight=2)
         
-        # Canvas with scrollbars
+        # Create canvas with scrollbars
         canvas_frame = ttk.Frame(pdf_frame)
         canvas_frame.pack(fill=tk.BOTH, expand=True)
         
-        self.pdf_canvas = tk.Canvas(canvas_frame, bg='white', width=self.image_width, height=self.image_height)
-        v_scrollbar = ttk.Scrollbar(canvas_frame, orient=tk.VERTICAL, command=self.pdf_canvas.yview)
-        h_scrollbar = ttk.Scrollbar(canvas_frame, orient=tk.HORIZONTAL, command=self.pdf_canvas.xview)
-        
+        self.pdf_canvas = tk.Canvas(canvas_frame, bg='white')
+        v_scrollbar = ttk.Scrollbar(canvas_frame, orient="vertical", command=self.pdf_canvas.yview)
+        h_scrollbar = ttk.Scrollbar(canvas_frame, orient="horizontal", command=self.pdf_canvas.xview)
         self.pdf_canvas.configure(yscrollcommand=v_scrollbar.set, xscrollcommand=h_scrollbar.set)
         
-        # Grid layout for canvas and scrollbars
-        self.pdf_canvas.grid(row=0, column=0, sticky="nsew")
-        v_scrollbar.grid(row=0, column=1, sticky="ns")
-        h_scrollbar.grid(row=1, column=0, sticky="ew")
+        v_scrollbar.pack(side="right", fill="y")
+        h_scrollbar.pack(side="bottom", fill="x")
+        self.pdf_canvas.pack(side="left", fill="both", expand=True)
         
-        canvas_frame.grid_columnconfigure(0, weight=1)
-        canvas_frame.grid_rowconfigure(0, weight=1)
-        
-        # Mouse events for highlighting
+        # Bind mouse events for selection
         self.pdf_canvas.bind("<Button-1>", self.on_mouse_down)
         self.pdf_canvas.bind("<B1-Motion>", self.on_mouse_drag)
         self.pdf_canvas.bind("<ButtonRelease-1>", self.on_mouse_up)
         
+        # Bind mousewheel for PDF canvas scrolling
+        def _on_pdf_mousewheel(event):
+            self.pdf_canvas.yview_scroll(int(-1*(event.delta/120)), "units")
+        self.pdf_canvas.bind("<MouseWheel>", _on_pdf_mousewheel)
+        
+        # Also bind to the frame to catch mouse wheel when over scrollbars
+        canvas_frame.bind("<MouseWheel>", _on_pdf_mousewheel)
+    
+    def setup_control_panel(self, parent):
+        """Setup the right control panel with master scrollbar"""
+        # Create frame with scrollbar for entire control panel
+        control_outer_frame = ttk.Frame(parent)
+        parent.add(control_outer_frame, weight=1)
+        
+        # Create canvas and scrollbar for master scroll
+        canvas = tk.Canvas(control_outer_frame)
+        master_scrollbar = ttk.Scrollbar(control_outer_frame, orient="vertical", command=canvas.yview)
+        scrollable_frame = ttk.Frame(canvas)
+        
+        canvas_window = canvas.create_window((0, 0), window=scrollable_frame, anchor="nw")
+        canvas.configure(yscrollcommand=master_scrollbar.set)
+        
+        def _configure_scroll_region(event=None):
+            canvas.configure(scrollregion=canvas.bbox("all"))
+            # Ensure the canvas width matches the frame width
+            canvas_width = canvas.winfo_width()
+            if canvas_width > 1:  # Avoid errors during initialization
+                canvas.itemconfig(canvas_window, width=canvas_width)
+        
+        scrollable_frame.bind("<Configure>", _configure_scroll_region)
+        canvas.bind("<Configure>", _configure_scroll_region)
+        
+        canvas.pack(side="left", fill="both", expand=True)
+        master_scrollbar.pack(side="right", fill="y")
+        
+        # Remove global mousewheel binding - only drag scrollbar to scroll
+        
+        # Now use scrollable_frame as the control_frame
+        control_frame = scrollable_frame
+        
         # Instructions
-        instructions = ttk.Label(pdf_frame, text="Click and drag to select text regions. Enable Hybrid OCR for better math formula extraction.")
-        instructions.pack(pady=(10, 0))
+        instructions = ttk.Label(control_frame, text="Instructions:", font=('Arial', 12, 'bold'))
+        instructions.pack(anchor='w', pady=(0, 5))
         
-        parent.add(pdf_frame, weight=2)
-    
-    def setup_notes_panel(self, parent):
-        """Setup the notes and Q&A panel"""
-        notes_frame = ttk.LabelFrame(parent, text="Highlights & Notes", padding=10)
+        instructions_text = ttk.Label(control_frame, text="1. Open a PDF file\n2. Drag to select text region\n3. Click 'Extract Text' to get content\n4. Ask questions about the selected text", wraplength=300, justify='left')
+        instructions_text.pack(anchor='w', pady=(0, 15))
         
-        # Notebook for tabs
-        notebook = ttk.Notebook(notes_frame)
-        notebook.pack(fill=tk.BOTH, expand=True)
+        # Selection status
+        self.status_label = ttk.Label(control_frame, text="No selection", foreground="gray")
+        self.status_label.pack(anchor='w', pady=(0, 10))
         
-        # Current highlight tab
-        highlight_tab = ttk.Frame(notebook)
-        notebook.add(highlight_tab, text="Current Highlight")
-        self.setup_highlight_tab(highlight_tab)
+        # Create a vertical paned window for resizable text areas
+        text_paned = ttk.PanedWindow(control_frame, orient=tk.VERTICAL)
+        text_paned.pack(fill=tk.BOTH, expand=True, pady=(10, 0))
         
-        # Session notes tab
-        notes_tab = ttk.Frame(notebook)
-        notebook.add(notes_tab, text="Session Notes")
-        self.setup_notes_tab(notes_tab)
+        # Top section: Extracted text
+        top_frame = ttk.Frame(text_paned)
+        text_paned.add(top_frame, weight=1)
         
-        parent.add(notes_frame, weight=1)
-    
-    def setup_highlight_tab(self, parent):
-        """Setup the current highlight analysis tab"""
-        # Extracted text display
-        ttk.Label(parent, text="Selected Text:").pack(anchor=tk.W)
-        self.selected_text = scrolledtext.ScrolledText(parent, height=6, wrap=tk.WORD, state=tk.DISABLED)
-        self.selected_text.pack(fill=tk.X, pady=(0, 10))
+        text_label = ttk.Label(top_frame, text="Extracted Text:", font=('Arial', 10, 'bold'))
+        text_label.pack(anchor='w', pady=(0, 5))
         
-        # Suggested questions section
-        question_frame = ttk.LabelFrame(parent, text="Questions", padding=5)
-        question_frame.pack(fill=tk.X, pady=(0, 10))
+        # Create text widget with proper word wrapping
+        self.text_display = scrolledtext.ScrolledText(top_frame, height=6, wrap=tk.WORD, font=('Arial', 10))
+        self.text_display.pack(fill=tk.BOTH, expand=True)
+        self.text_widgets.append(self.text_display)
         
-        # Generate suggestions button
-        suggest_frame = ttk.Frame(question_frame)
-        suggest_frame.pack(fill=tk.X, pady=(0, 5))
+        # Middle section: Controls
+        controls_frame = ttk.Frame(text_paned)
+        text_paned.add(controls_frame, weight=0)
         
-        ttk.Button(suggest_frame, text="🤔 Generate Question Ideas", 
-                  command=self.generate_suggested_questions).pack(side=tk.LEFT)
+        # Question input
+        question_label = ttk.Label(controls_frame, text="Ask a question:", font=('Arial', 10, 'bold'))
+        question_label.pack(anchor='w', pady=(10, 5))
+        
+        self.question_entry = tk.Entry(controls_frame, width=40)
+        self.question_entry.pack(fill=tk.X, pady=(0, 10))
+        self.question_entry.bind("<Return>", self.ask_question)
+        
+        ttk.Button(controls_frame, text="Ask Question", command=self.ask_question).pack(pady=(0, 5))
+        ttk.Button(controls_frame, text="Generate Suggested Questions", command=self.generate_suggested_questions).pack(pady=(0, 5))
         
         # Suggested questions dropdown
-        ttk.Label(suggest_frame, text="Suggested:").pack(side=tk.LEFT, padx=(10, 5))
-        self.suggested_questions = []
-        self.suggested_var = tk.StringVar()
-        self.suggested_combo = ttk.Combobox(suggest_frame, textvariable=self.suggested_var, 
-                                          state="readonly", width=40)
-        self.suggested_combo.pack(side=tk.LEFT, fill=tk.X, expand=True, padx=(0, 5))
-        self.suggested_combo.bind('<<ComboboxSelected>>', self.on_suggestion_selected)
+        suggested_label = ttk.Label(controls_frame, text="Suggested Questions:", font=('Arial', 10, 'bold'))
+        suggested_label.pack(anchor='w', pady=(10, 5))
         
-        # Custom question input
-        ttk.Label(question_frame, text="Or ask your own question:").pack(anchor=tk.W, pady=(5, 0))
-        self.question_entry = scrolledtext.ScrolledText(question_frame, height=3, wrap=tk.WORD)
-        self.question_entry.pack(fill=tk.X, pady=(2, 0))
+        self.suggested_questions_var = tk.StringVar()
+        self.suggested_questions_dropdown = ttk.Combobox(controls_frame, textvariable=self.suggested_questions_var, width=50, state="readonly")
+        self.suggested_questions_dropdown.pack(fill=tk.X, pady=(0, 5))
         
-        # Action buttons
-        button_frame = ttk.Frame(parent)
-        button_frame.pack(fill=tk.X, pady=(0, 10))
+        # Answer length selector
+        answer_frame = ttk.Frame(controls_frame)
+        answer_frame.pack(fill=tk.X, pady=(0, 5))
+        ttk.Label(answer_frame, text="Answer length:").pack(side=tk.LEFT)
         
-        ttk.Button(button_frame, text="Explain Text", command=self.explain_text).pack(side=tk.LEFT, padx=(0, 5))
-        ttk.Button(button_frame, text="Ask Question", command=self.ask_question).pack(side=tk.LEFT, padx=5)
+        self.answer_length_var = tk.StringVar(value="Medium (250-500 tokens)")
+        self.answer_length_dropdown = ttk.Combobox(answer_frame, textvariable=self.answer_length_var, width=25, state="readonly")
+        self.answer_length_dropdown['values'] = [
+            "Short (< 250 tokens)",
+            "Medium (250-500 tokens)", 
+            "Long (500-1000 tokens)",
+            "Comprehensive (> 1000 tokens)"
+        ]
+        self.answer_length_dropdown.pack(side=tk.LEFT, padx=(5, 0), fill=tk.X, expand=True)
         
-        # Web search option
-        self.use_web_search = tk.BooleanVar()
-        ttk.Checkbutton(button_frame, text="Use Web Search", variable=self.use_web_search).pack(side=tk.RIGHT)
+        ttk.Button(controls_frame, text="Ask Selected Question", command=self.ask_selected_question).pack(pady=(5, 20))
         
-        # Response display
-        ttk.Label(parent, text="AI Response:").pack(anchor=tk.W)
-        self.response_text = scrolledtext.ScrolledText(parent, height=8, wrap=tk.WORD, state=tk.DISABLED)
-        self.response_text.pack(fill=tk.BOTH, expand=True)
-    
-    def setup_notes_tab(self, parent):
-        """Setup the session notes tab"""
-        # Notes list
-        notes_list_frame = ttk.Frame(parent)
-        notes_list_frame.pack(fill=tk.BOTH, expand=True, pady=(0, 10))
+        # Add extra padding at the bottom to ensure everything is scrollable
+        ttk.Label(controls_frame, text="").pack(pady=(0, 50))
         
-        self.notes_tree = ttk.Treeview(notes_list_frame, columns=('Time', 'Text', 'Response'), show='headings', height=15)
-        self.notes_tree.heading('Time', text='Time')
-        self.notes_tree.heading('Text', text='Highlighted Text')
-        self.notes_tree.heading('Response', text='AI Response')
+        # Bottom section: Response display (larger weight for more space)
+        bottom_frame = ttk.Frame(text_paned)
+        text_paned.add(bottom_frame, weight=2)  # Double weight for more space
         
-        self.notes_tree.column('Time', width=100)
-        self.notes_tree.column('Text', width=200)
-        self.notes_tree.column('Response', width=300)
+        response_label = ttk.Label(bottom_frame, text="LLM Response:", font=('Arial', 10, 'bold'))
+        response_label.pack(anchor='w', pady=(10, 5))
         
-        notes_scrollbar = ttk.Scrollbar(notes_list_frame, orient=tk.VERTICAL, command=self.notes_tree.yview)
-        self.notes_tree.configure(yscrollcommand=notes_scrollbar.set)
+        # Create response widget with proper word wrapping
+        self.response_display = scrolledtext.ScrolledText(bottom_frame, height=12, wrap=tk.WORD, font=('Arial', 10))
+        self.response_display.pack(fill=tk.BOTH, expand=True)
+        self.text_widgets.append(self.response_display)
         
-        self.notes_tree.grid(row=0, column=0, sticky="nsew")
-        notes_scrollbar.grid(row=0, column=1, sticky="ns")
-        
-        notes_list_frame.grid_columnconfigure(0, weight=1)
-        notes_list_frame.grid_rowconfigure(0, weight=1)
-        
-        # Action buttons
-        action_frame = ttk.Frame(parent)
-        action_frame.pack(fill=tk.X)
-        
-        ttk.Button(action_frame, text="Export Notes", command=self.export_notes).pack(side=tk.LEFT)
-        ttk.Button(action_frame, text="Clear Session", command=self.clear_session).pack(side=tk.LEFT, padx=10)
+        # Add bottom padding to ensure master scrollbar can reach the end
+        bottom_spacer = ttk.Label(control_frame, text="")
+        bottom_spacer.pack(pady=(20, 100))
     
     def open_pdf(self):
-        """Open and load a PDF file"""
-        file_path = filedialog.askopenfilename(
-            title="Select PDF file",
-            filetypes=[("PDF files", "*.pdf"), ("All files", "*.*")]
-        )
-        
+        """Open a PDF file"""
+        file_path = filedialog.askopenfilename(filetypes=[("PDF files", "*.pdf")])
         if file_path:
             try:
                 self.pdf_doc = fitz.open(file_path)
                 self.pdf_path = file_path
                 self.current_page = 0
-                
-                # Update page selector  
-                page_count = self.pdf_processor.get_page_count(file_path)
-                page_list = [str(i+1) for i in range(page_count)]
-                self.page_combo['values'] = page_list
-                self.page_combo.set("1")
-                
-                # Load first page
-                self.load_page()
-                self.status_label.config(text=f"Loaded: {os.path.basename(file_path)} ({page_count} pages)")
-                
+                self.clear_selection()
+                self.display_page()
+                self.update_page_label()
+                print(f"Opened PDF: {file_path} ({len(self.pdf_doc)} pages)")
             except Exception as e:
-                messagebox.showerror("Error", f"Could not open PDF: {e}")
+                messagebox.showerror("Error", f"Failed to open PDF: {e}")
     
-    def load_page(self):
-        """Load and display the current page"""
+    def display_page(self):
+        """Display the current PDF page"""
         if not self.pdf_doc:
             return
         
         try:
             page = self.pdf_doc[self.current_page]
             
-            # Render page as image
-            mat = fitz.Matrix(2.0, 2.0)  # 2x zoom for better quality
+            # Get page as image
+            mat = fitz.Matrix(1.5, 1.5)  # Zoom for better quality
             pix = page.get_pixmap(matrix=mat)
             img_data = pix.tobytes("ppm")
             
             # Convert to PIL Image and then to PhotoImage
-            from io import BytesIO
-            pil_image = Image.open(BytesIO(img_data))
+            import io
+            image = Image.open(io.BytesIO(img_data))
+            
+            # Resize to fit display
+            self.image_width, self.image_height = image.size
+            if self.image_width > DEFAULT_SETTINGS['pdf_display_width']:
+                ratio = DEFAULT_SETTINGS['pdf_display_width'] / self.image_width
+                new_width = int(self.image_width * ratio)
+                new_height = int(self.image_height * ratio)
+                image = image.resize((new_width, new_height), Image.Resampling.LANCZOS)
+                self.image_width, self.image_height = new_width, new_height
             
             # Calculate scaling factors for coordinate conversion
-            pdf_rect = page.rect
-            self.scale_x = pdf_rect.width / pil_image.width
-            self.scale_y = pdf_rect.height / pil_image.height
+            page_rect = page.rect
+            self.scale_x = page_rect.width / self.image_width
+            self.scale_y = page_rect.height / self.image_height
             
-            print(f"DEBUG: PDF rect: {pdf_rect}")
-            print(f"DEBUG: PIL image size: {pil_image.width} x {pil_image.height}")
-            print(f"DEBUG: Scale factors: x={self.scale_x}, y={self.scale_y}")
+            self.photo = ImageTk.PhotoImage(image)
             
-            # Resize if too large
-            max_width, max_height = 800, 1000
-            if pil_image.width > max_width or pil_image.height > max_height:
-                pil_image.thumbnail((max_width, max_height), Image.Resampling.LANCZOS)
-                # Recalculate scaling
-                self.scale_x = pdf_rect.width / pil_image.width
-                self.scale_y = pdf_rect.height / pil_image.height
-            
-            self.pdf_image = ImageTk.PhotoImage(pil_image)
-            
-            # Update canvas
+            # Clear canvas and display image
             self.pdf_canvas.delete("all")
-            self.pdf_canvas.configure(scrollregion=(0, 0, pil_image.width, pil_image.height))
-            self.pdf_canvas.create_image(0, 0, anchor=tk.NW, image=self.pdf_image)
-            
-            # Clear selection
-            self.clear_selection()
+            self.pdf_canvas.create_image(0, 0, anchor=tk.NW, image=self.photo)
+            self.pdf_canvas.config(scrollregion=(0, 0, self.image_width, self.image_height))
             
         except Exception as e:
-            messagebox.showerror("Error", f"Could not load page: {e}")
-    
-    def on_page_change(self, event=None):
-        """Handle page selection change"""
-        if self.page_var.get():
-            try:
-                new_page = int(self.page_var.get()) - 1
-                if 0 <= new_page < len(self.pdf_doc):
-                    self.current_page = new_page
-                    self.load_page()
-            except ValueError:
-                pass
+            print(f"Error displaying page: {e}")
     
     def prev_page(self):
         """Go to previous page"""
         if self.pdf_doc and self.current_page > 0:
             self.current_page -= 1
-            self.page_combo.set(str(self.current_page + 1))
-            self.load_page()
+            self.clear_selection()
+            self.display_page()
+            self.update_page_label()
     
     def next_page(self):
         """Go to next page"""
         if self.pdf_doc and self.current_page < len(self.pdf_doc) - 1:
             self.current_page += 1
-            self.page_combo.set(str(self.current_page + 1))
-            self.load_page()
+            self.clear_selection()
+            self.display_page()
+            self.update_page_label()
+    
+    def go_to_page(self, event=None):
+        """Go to specific page number"""
+        if not self.pdf_doc:
+            messagebox.showwarning("No PDF", "Please open a PDF first.")
+            return
+        
+        try:
+            page_num = int(self.page_entry.get().strip())
+            # Convert to 0-based index
+            page_index = page_num - 1
+            
+            if page_index < 0 or page_index >= len(self.pdf_doc):
+                messagebox.showwarning("Invalid Page", f"Page number must be between 1 and {len(self.pdf_doc)}.")
+                return
+            
+            self.current_page = page_index
+            self.clear_selection()
+            self.display_page()
+            self.update_page_label()
+            self.page_entry.delete(0, tk.END)  # Clear the entry
+            
+        except ValueError:
+            messagebox.showwarning("Invalid Input", "Please enter a valid page number.")
+    
+    def update_page_label(self):
+        """Update the page count label"""
+        if self.pdf_doc:
+            self.page_label.config(text=f"Page: {self.current_page + 1} / {len(self.pdf_doc)}")
+        else:
+            self.page_label.config(text="Page: 0 / 0")
     
     def on_mouse_down(self, event):
         """Handle mouse down for selection start"""
-        # Clear any existing selection rectangle only
-        self.clear_selection(clear_coordinates=False)
-        # Now set the new selection start
-        self.selection_start = (self.pdf_canvas.canvasx(event.x), self.pdf_canvas.canvasy(event.y))
+        canvas_x = self.pdf_canvas.canvasx(event.x)
+        canvas_y = self.pdf_canvas.canvasy(event.y)
+        
         self.is_selecting = True
-        print(f"Mouse down at: {self.selection_start}")  # Debug
+        
+        # Clear existing selection
+        if self.selection_rect:
+            self.pdf_canvas.delete(self.selection_rect)
+        
+        self.selection_start = (canvas_x, canvas_y)
+        self.selection_complete = False
+        self.update_status("Selection started...")
     
     def on_mouse_drag(self, event):
         """Handle mouse drag for selection"""
         if not self.is_selecting or not self.selection_start:
             return
-        
-        current_pos = (self.pdf_canvas.canvasx(event.x), self.pdf_canvas.canvasy(event.y))
-        print(f"Mouse dragging to: {current_pos}")  # Debug
+            
+        canvas_x = self.pdf_canvas.canvasx(event.x)
+        canvas_y = self.pdf_canvas.canvasy(event.y)
         
         # Remove previous selection rectangle
         if self.selection_rect:
@@ -389,9 +405,9 @@ class InteractivePDFHighlighter:
         
         # Draw selection rectangle
         x1, y1 = self.selection_start
-        x2, y2 = current_pos
+        x2, y2 = canvas_x, canvas_y
         self.selection_rect = self.pdf_canvas.create_rectangle(
-            x1, y1, x2, y2, outline="red", width=2, fill="", dash=(5, 5)
+            x1, y1, x2, y2, outline="red", width=2, fill="", tags="selection"
         )
     
     def on_mouse_up(self, event):
@@ -399,380 +415,281 @@ class InteractivePDFHighlighter:
         if not self.is_selecting:
             return
         
-        self.selection_end = (self.pdf_canvas.canvasx(event.x), self.pdf_canvas.canvasy(event.y))
-        self.is_selecting = False
-        print(f"Mouse up at: {self.selection_end}")  # Debug
+        canvas_x = self.pdf_canvas.canvasx(event.x)
+        canvas_y = self.pdf_canvas.canvasy(event.y)
         
-        # Extract text from selection
-        self.extract_selected_text()
+        self.selection_end = (canvas_x, canvas_y)
+        self.selection_complete = True
+        self.is_selecting = False
+        
+        self.update_status("Selection completed. Click 'Extract Text' to get content.")
     
-    def clear_selection(self, clear_coordinates=True):
-        """Clear current selection"""
+    def clear_selection(self):
+        """Clear all selections"""
         if self.selection_rect:
             self.pdf_canvas.delete(self.selection_rect)
-            self.selection_rect = None
         
-        if clear_coordinates:
-            self.selection_start = None
-            self.selection_end = None
-        
-        # Clear text displays
-        self.selected_text.config(state=tk.NORMAL)
-        self.selected_text.delete(1.0, tk.END)
-        self.selected_text.config(state=tk.DISABLED)
+        self.selection_start = None
+        self.selection_end = None
+        self.selection_rect = None
+        self.selection_complete = False
+        self.text_display.delete('1.0', tk.END)
+        self.response_display.delete('1.0', tk.END)
         
         # Clear suggested questions
-        self.suggested_questions = []
-        self.suggested_combo['values'] = []
-        self.suggested_combo.set("")
+        self.suggested_questions_list = []
+        self.suggested_questions_dropdown['values'] = []
+        self.suggested_questions_var.set("")
         
-        # Clear response text
-        self.response_text.config(state=tk.NORMAL)
-        self.response_text.delete(1.0, tk.END)
-        self.response_text.config(state=tk.DISABLED)
+        self.update_status("No selection")
+    
+    def canvas_to_pdf_rect(self, start_pos, end_pos):
+        """Convert canvas coordinates to PDF rectangle"""
+        x1, y1 = start_pos
+        x2, y2 = end_pos
+        
+        # Convert to PDF coordinates
+        pdf_x1 = x1 * self.scale_x
+        pdf_y1 = y1 * self.scale_y
+        pdf_x2 = x2 * self.scale_x
+        pdf_y2 = y2 * self.scale_y
+        
+        # Ensure correct ordering
+        pdf_x1, pdf_x2 = min(pdf_x1, pdf_x2), max(pdf_x1, pdf_x2)
+        pdf_y1, pdf_y2 = min(pdf_y1, pdf_y2), max(pdf_y1, pdf_y2)
+        
+        return fitz.Rect(pdf_x1, pdf_y1, pdf_x2, pdf_y2)
     
     def extract_selected_text(self):
-        """Extract text from the selected region"""
-        if not self.selection_start or not self.selection_end or not self.pdf_doc:
+        """Extract text from the selected region using fitz"""
+        if not self.selection_complete or not self.pdf_doc:
+            messagebox.showwarning("No Selection", "Please select a region first.")
             return
         
         try:
-            # Convert image coordinates to PDF coordinates
-            x1, y1 = self.selection_start
-            x2, y2 = self.selection_end
-            
-            # Debug: Print coordinate conversion details
-            print(f"Image coordinates: ({x1}, {y1}) to ({x2}, {y2})")
-            print(f"Scale factors: scale_x={self.scale_x}, scale_y={self.scale_y}")
-            
-            # Ensure proper ordering
-            pdf_x1 = min(x1, x2) * self.scale_x
-            pdf_y1 = min(y1, y2) * self.scale_y
-            pdf_x2 = max(x1, x2) * self.scale_x
-            pdf_y2 = max(y1, y2) * self.scale_y
-            
-            print(f"PDF coordinates: ({pdf_x1}, {pdf_y1}) to ({pdf_x2}, {pdf_y2})")
-            
-            # Create selection rectangle in PDF coordinates
-            selection_rect = fitz.Rect(pdf_x1, pdf_y1, pdf_x2, pdf_y2)
-            
-            # SOLUTION: Instead of precise clipping, extract text by finding lines that intersect
             page = self.pdf_doc[self.current_page]
+            rect = self.canvas_to_pdf_rect(self.selection_start, self.selection_end)
             
-            # Use hybrid OCR for smart text extraction
-            text = self.extract_text_with_hybrid_ocr(page, selection_rect)
+            # Extract text using fitz
+            text = page.get_text("text", clip=rect).strip()
             
-            if text:
-                # Display extracted text
-                self.selected_text.config(state=tk.NORMAL)
-                self.selected_text.delete(1.0, tk.END)
-                self.selected_text.insert(1.0, text)
-                self.selected_text.config(state=tk.DISABLED)
-            else:
-                messagebox.showinfo("No Text", "No text found in selected region")
-                self.clear_selection()
-                
-        except Exception as e:
-            messagebox.showerror("Error", f"Could not extract text: {e}")
-            self.clear_selection()
-    
-    def extract_text_with_hybrid_ocr(self, page, rect):
-        """Extract text using hybrid OCR approach"""
-        try:
-            print(f"DEBUG: Extracting from rect: {rect}")
+            if not text:
+                text = "No text found in selected region."
             
-            if self.use_hybrid_ocr and self.hybrid_ocr_processor.general_ocr:
-                # Use hybrid OCR extraction
-                result = self.hybrid_ocr_processor.extract_region_with_hybrid_ocr(page, rect)
-                text = result.get('text', '')
-                method = result.get('method', 'unknown')
-                confidence = result.get('confidence', 0)
-                
-                print(f"DEBUG: Hybrid OCR used - Method: {method}, Confidence: {confidence}")
-                print(f"DEBUG: Result: '{text[:100]}...' ({len(text)} chars)")
-                
-                if 'math_regions_found' in result:
-                    print(f"DEBUG: Math regions enhanced: {result['math_regions_found']}")
-                
-                return text
-            else:
-                # Use standard fitz extraction
-                text = page.get_text("text", clip=rect).strip()
-                print(f"DEBUG: Using traditional fitz extraction")
-                print(f"DEBUG: Result: '{text[:100]}...' ({len(text)} chars)")
-                return text
+            # Display extracted text
+            self.text_display.delete('1.0', tk.END)
+            self.text_display.insert('1.0', text)
+            
+            self.update_status(f"Extracted {len(text)} characters using fitz")
+            print(f"Extracted text ({len(text)} chars): {text[:100]}...")
             
         except Exception as e:
-            print(f"Error in hybrid text extraction: {e}")
-            # Fallback to regular extraction
-            try:
-                text = page.get_text("text", clip=rect).strip()
-                print(f"DEBUG: Fallback extraction successful")
-                return text
-            except Exception as fallback_error:
-                print(f"Error in fallback extraction: {fallback_error}")
-                return ""
+            messagebox.showerror("Error", f"Failed to extract text: {e}")
     
-    def toggle_ocr(self):
-        """Toggle hybrid OCR usage for text extraction"""
-        self.use_hybrid_ocr = self.ocr_var.get()
-        status = "enabled" if self.use_hybrid_ocr else "disabled"
-        print(f"DEBUG: Hybrid OCR extraction {status}")
+    def ask_question(self, event=None):
+        """Ask a question about the extracted text"""
+        question = self.question_entry.get().strip()
+        extracted_text = self.text_display.get('1.0', tk.END).strip()
         
-        # Update status
-        if self.use_hybrid_ocr and self.hybrid_ocr_processor.general_ocr:
-            if self.hybrid_ocr_processor.math_processor:
-                self.status_label.config(text="Hybrid OCR enabled (General + Math)")
-            else:
-                self.status_label.config(text="Hybrid OCR enabled (General only)")
-        else:
-            self.status_label.config(text="Traditional extraction")
-            if self.use_hybrid_ocr:
-                print("WARNING: Hybrid OCR requested but not available")
-    
-    def minimal_symbol_fix(self, text):
-        """Apply only minimal symbol fixing for clear PDF corruption artifacts"""
-        if not text:
-            return text
+        if not question:
+            messagebox.showwarning("No Question", "Please enter a question.")
+            return
         
-        # Only fix clear corruption patterns, not legitimate words
-        corruption_fixes = {
-            # Common PDF encoding corruption
-            '�P': '≠',   # Only if clearly a corrupted not-equal symbol
-            '��': '×',   # Corrupted multiplication
-            '�': '',     # Remove standalone corruption characters
-            
-            # Only fix mathematical operators that are clearly corrupted
-            # DO NOT convert "sum" to "Σ" - "sum" is often the correct word
-        }
+        if not extracted_text or extracted_text == "No text found in selected region.":
+            messagebox.showwarning("No Text", "Please extract text first.")
+            return
         
-        fixed_text = text
-        for corrupted, correct in corruption_fixes.items():
-            fixed_text = fixed_text.replace(corrupted, correct)
-        
-        return fixed_text
-    
-    def get_selected_text(self):
-        """Get the currently selected text"""
-        return self.selected_text.get(1.0, tk.END).strip()
-    
-    def get_question(self):
-        """Get the user's question"""
-        return self.question_entry.get(1.0, tk.END).strip()
-    
-    def generate_suggested_questions(self):
-        """Generate AI-suggested questions based on selected text"""
-        selected_text = self.get_selected_text()
-        if not selected_text:
-            messagebox.showwarning("No Selection", "Please select some text first")
+        if 'perplexity' not in self.available_apis:
+            messagebox.showerror("API Error", "Perplexity API key not available.")
             return
         
         try:
-            # Show loading in combo
-            self.suggested_combo['values'] = ["Generating questions..."]
-            self.suggested_combo.set("Generating questions...")
+            # Create prompt with context
+            prompt = f"""Based on the following text extracted from a PDF:
+
+{extracted_text}
+
+Question: {question}
+
+Please provide a clear and helpful answer based on the content above."""
+
+            self.response_display.delete('1.0', tk.END)
+            self.response_display.insert('1.0', "Getting response from Perplexity...")
             self.root.update()
             
-            # Create prompt for question generation
-            prompt = f"""Based on the following text, generate 5-7 thoughtful questions that would help someone better understand the content. Include different types of questions: definition questions, explanation questions, application questions, and analysis questions.
-
-Text: "{selected_text}"
-
-Please provide only the questions, one per line, without numbering or bullet points."""
-            
-            # Use AI to generate questions (without web search for faster response)
-            response = None
-            if 'gemini_api_key' in self.api_keys:
-                response = send_prompt_to_gemini(prompt, self.api_keys['gemini_api_key'], search_enabled=False)
-            elif 'perplexity_api_key' in self.api_keys:
-                response = send_prompt_to_perplexity(prompt, self.api_keys['perplexity_api_key'], search_enabled=False)
-            else:
-                messagebox.showerror("No API Key", "Please add gemini_api_key or perplexity_api_key to secrets.json")
-                return
-            
-            # Parse questions from response
-            questions = []
-            for line in response.strip().split('\n'):
-                question = line.strip()
-                # Clean up the question (remove numbers, bullets, etc.)
-                question = question.lstrip('0123456789.-• ')
-                if question and question.endswith('?'):
-                    questions.append(question)
-            
-            if questions:
-                self.suggested_questions = questions
-                self.suggested_combo['values'] = ["Select a question..."] + questions
-                self.suggested_combo.set("Select a question...")
-                print(f"Generated {len(questions)} questions")  # Debug
-            else:
-                self.suggested_combo['values'] = ["No questions generated"]
-                self.suggested_combo.set("No questions generated")
-                
-        except Exception as e:
-            self.suggested_combo['values'] = ["Error generating questions"]
-            self.suggested_combo.set("Error generating questions")
-            print(f"Error generating questions: {e}")
-    
-    def on_suggestion_selected(self, event=None):
-        """Handle selection of a suggested question"""
-        selected = self.suggested_var.get()
-        if selected and selected not in ["Select a question...", "Generating questions...", 
-                                       "No questions generated", "Error generating questions"]:
-            # Put the selected question in the text area
-            self.question_entry.delete(1.0, tk.END)
-            self.question_entry.insert(1.0, selected)
-            print(f"Selected question: {selected}")  # Debug
-    
-    def explain_text(self):
-        """Get AI explanation of selected text"""
-        selected_text = self.get_selected_text()
-        if not selected_text:
-            messagebox.showwarning("No Selection", "Please select some text first")
-            return
-        
-        question = f"Explain this text in detail: {selected_text}"
-        self.send_llm_request(question, selected_text)
-    
-    def ask_question(self):
-        """Ask a custom question about selected text"""
-        selected_text = self.get_selected_text()
-        user_question = self.get_question()
-        
-        if not selected_text:
-            messagebox.showwarning("No Selection", "Please select some text first")
-            return
-        
-        if not user_question:
-            messagebox.showwarning("No Question", "Please enter a question")
-            return
-        
-        question = f"Given this text: '{selected_text}'\n\nQuestion: {user_question}"
-        self.send_llm_request(question, selected_text)
-    
-    def send_llm_request(self, question, selected_text):
-        """Send request to LLM and display response"""
-        try:
-            # Show loading
-            self.response_text.config(state=tk.NORMAL)
-            self.response_text.delete(1.0, tk.END)
-            self.response_text.insert(1.0, "Getting AI response...")
-            self.response_text.config(state=tk.DISABLED)
-            self.root.update()
-            
-            use_search = self.use_web_search.get()
-            
-            # Try Gemini first, then Perplexity
-            response = None
-            if 'gemini_api_key' in self.api_keys:
-                response = send_prompt_to_gemini(question, self.api_keys['gemini_api_key'], search_enabled=use_search)
-            elif 'perplexity_api_key' in self.api_keys:
-                response = send_prompt_to_perplexity(question, self.api_keys['perplexity_api_key'], search_enabled=use_search)
-            else:
-                messagebox.showerror("No API Key", "Please add gemini_api_key or perplexity_api_key to secrets.json")
-                return
+            # Send to Perplexity
+            api_key = self.api_keys['perplexity_api_key']
+            response = send_prompt_to_perplexity(prompt, api_key, search_enabled=True)
             
             # Display response
-            self.response_text.config(state=tk.NORMAL)
-            self.response_text.delete(1.0, tk.END)
-            self.response_text.insert(1.0, response)
-            self.response_text.config(state=tk.DISABLED)
+            self.response_display.delete('1.0', tk.END)
+            self.response_display.insert('1.0', response)
             
-            # Save to session notes
-            self.add_to_session_notes(selected_text, question, response)
+            # Clear question for next use
+            self.question_entry.delete(0, tk.END)
+            
+            # Add to session notes
+            self.session_notes.append({
+                "timestamp": datetime.now().isoformat(),
+                "page": self.current_page + 1,
+                "question": question,
+                "text": extracted_text[:200] + "..." if len(extracted_text) > 200 else extracted_text,
+                "response": response[:500] + "..." if len(response) > 500 else response
+            })
             
         except Exception as e:
-            self.response_text.config(state=tk.NORMAL)
-            self.response_text.delete(1.0, tk.END)
-            self.response_text.insert(1.0, f"Error: {e}")
-            self.response_text.config(state=tk.DISABLED)
+            self.response_display.delete('1.0', tk.END)
+            self.response_display.insert('1.0', f"Error: {e}")
+            messagebox.showerror("API Error", f"Failed to get response: {e}")
     
-    def add_to_session_notes(self, text, question, response):
-        """Add Q&A to session notes"""
-        timestamp = datetime.now().strftime("%H:%M:%S")
-        note = {
-            'time': timestamp,
-            'page': self.current_page + 1,
-            'text': text[:100] + "..." if len(text) > 100 else text,
-            'question': question,
-            'response': response
-        }
-        self.session_notes.append(note)
+    def generate_suggested_questions(self):
+        """Generate suggested questions about the extracted text using sonar"""
+        extracted_text = self.text_display.get('1.0', tk.END).strip()
         
-        # Update notes tree
-        self.notes_tree.insert('', 'end', values=(timestamp, note['text'], response[:100] + "..."))
-    
-    def save_session(self):
-        """Save current session to file"""
-        if not self.session_notes:
-            messagebox.showwarning("No Notes", "No notes to save")
+        if not extracted_text or extracted_text == "No text found in selected region.":
+            messagebox.showwarning("No Text", "Please extract text first.")
             return
         
-        file_path = filedialog.asksaveasfilename(
-            title="Save session notes",
-            defaultextension=".json",
-            filetypes=[("JSON files", "*.json"), ("All files", "*.*")]
-        )
-        
-        if file_path:
-            try:
-                session_data = {
-                    'pdf_path': self.pdf_path,
-                    'timestamp': datetime.now().isoformat(),
-                    'notes': self.session_notes
-                }
-                
-                with open(file_path, 'w') as f:
-                    json.dump(session_data, f, indent=2)
-                
-                messagebox.showinfo("Success", "Session saved successfully")
-            except Exception as e:
-                messagebox.showerror("Error", f"Could not save session: {e}")
-    
-    def export_notes(self):
-        """Export notes to text file"""
-        if not self.session_notes:
-            messagebox.showwarning("No Notes", "No notes to export")
+        if 'perplexity' not in self.available_apis:
+            messagebox.showerror("API Error", "Perplexity API key not available.")
             return
         
-        file_path = filedialog.asksaveasfilename(
-            title="Export notes",
-            defaultextension=".txt",
-            filetypes=[("Text files", "*.txt"), ("All files", "*.*")]
-        )
-        
-        if file_path:
-            try:
-                with open(file_path, 'w', encoding='utf-8') as f:
-                    f.write(f"PDF Highlighter Session Notes\n")
-                    f.write(f"PDF: {os.path.basename(self.pdf_path)}\n")
-                    f.write(f"Date: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n")
-                    f.write("=" * 50 + "\n\n")
-                    
-                    for i, note in enumerate(self.session_notes, 1):
-                        f.write(f"Note {i} - Page {note['page']} - {note['time']}\n")
-                        f.write(f"Selected Text: {note['text']}\n")
-                        f.write(f"Question: {note['question']}\n")
-                        f.write(f"AI Response: {note['response']}\n")
-                        f.write("-" * 30 + "\n\n")
-                
-                messagebox.showinfo("Success", "Notes exported successfully")
-            except Exception as e:
-                messagebox.showerror("Error", f"Could not export notes: {e}")
-    
-    def clear_session(self):
-        """Clear all session notes"""
-        if messagebox.askyesno("Clear Session", "Are you sure you want to clear all notes?"):
-            self.session_notes.clear()
-            # Clear tree
-            for item in self.notes_tree.get_children():
-                self.notes_tree.delete(item)
+        try:
+            # Create prompt to generate suggested questions
+            prompt = f"""Based on the following text extracted from a PDF, generate exactly 5 relevant and insightful questions that would help someone understand the key concepts, important details, or implications of this content:
 
+{extracted_text}
+
+Please provide:
+1. Questions that focus on the main concepts
+2. Questions that explore deeper understanding
+3. Questions that might connect to broader topics
+
+Format your response EXACTLY as follows (one question per line, no numbering):
+What are the key concepts discussed in this text?
+How does this relate to broader theoretical frameworks?
+What are the practical implications of these ideas?
+What evidence supports the main arguments presented?
+How might this information be applied in real-world scenarios?
+
+IMPORTANT: Return ONLY the questions, one per line, no additional text or formatting."""
+
+            # Show loading message
+            self.response_display.delete('1.0', tk.END)
+            self.response_display.insert('1.0', "Generating suggested questions...")
+            self.root.update()
+            
+            # Send to Perplexity using sonar model for question generation
+            api_key = self.api_keys['perplexity_api_key']
+            response = send_prompt_to_perplexity(prompt, api_key, model="sonar", search_enabled=False)
+            
+            # Parse questions from response
+            questions = [q.strip() for q in response.strip().split('\n') if q.strip() and not q.strip().startswith('Q') and '?' in q]
+            
+            if questions:
+                self.suggested_questions_list = questions
+                self.suggested_questions_dropdown['values'] = questions
+                self.response_display.delete('1.0', tk.END)
+                self.response_display.insert('1.0', f"Generated {len(questions)} suggested questions. Select one from the dropdown above.")
+            else:
+                self.response_display.delete('1.0', tk.END)
+                self.response_display.insert('1.0', "No questions could be parsed from the response.")
+            
+        except Exception as e:
+            self.response_display.delete('1.0', tk.END)
+            self.response_display.insert('1.0', f"Error generating suggested questions: {e}")
+            messagebox.showerror("API Error", f"Failed to generate suggestions: {e}")
+    
+    def ask_selected_question(self):
+        """Ask the selected question from the dropdown with length control and model selection"""
+        selected_question = self.suggested_questions_var.get().strip()
+        extracted_text = self.text_display.get('1.0', tk.END).strip()
+        answer_length = self.answer_length_var.get()
+        
+        if not selected_question:
+            messagebox.showwarning("No Question Selected", "Please select a question from the dropdown.")
+            return
+        
+        if not extracted_text or extracted_text == "No text found in selected region.":
+            messagebox.showwarning("No Text", "Please extract text first.")
+            return
+        
+        if 'perplexity' not in self.available_apis:
+            messagebox.showerror("API Error", "Perplexity API key not available.")
+            return
+        
+        try:
+            # Determine model and length instruction based on selection
+            if "Short" in answer_length:
+                model = "sonar"
+                length_instruction = "Please provide a concise answer in less than 250 tokens (about 2-3 sentences)."
+            else:
+                model = "sonar-reasoning"
+                if "Medium" in answer_length:
+                    length_instruction = "Please provide a detailed answer in 250-500 tokens (about 1-2 paragraphs)."
+                elif "Long" in answer_length:
+                    length_instruction = "Please provide a comprehensive answer in 500-1000 tokens (about 3-4 paragraphs)."
+                else:  # Comprehensive
+                    length_instruction = "Please provide a thorough, comprehensive answer with detailed explanations, examples, and context (1000+ tokens)."
+            
+            # Create prompt with context and length instruction
+            prompt = f"""Based on the following text extracted from a PDF:
+
+{extracted_text}
+
+Question: {selected_question}
+
+{length_instruction} Base your answer on the content above and use web search to find additional context and examples if helpful."""
+
+            self.response_display.delete('1.0', tk.END)
+            model_display = "sonar" if model == "sonar" else "sonar-reasoning"
+            self.response_display.insert('1.0', f"Getting {answer_length.lower()} response using {model_display}...")
+            self.root.update()
+            
+            # Send to Perplexity using selected model
+            api_key = self.api_keys['perplexity_api_key']
+            response = send_prompt_to_perplexity(prompt, api_key, model=model, search_enabled=True)
+            
+            # Display response
+            self.response_display.delete('1.0', tk.END)
+            self.response_display.insert('1.0', response)
+            
+            # Add to session notes
+            self.session_notes.append({
+                "timestamp": datetime.now().isoformat(),
+                "page": self.current_page + 1,
+                "question": selected_question,
+                "answer_length": answer_length,
+                "model_used": model,
+                "text": extracted_text[:200] + "..." if len(extracted_text) > 200 else extracted_text,
+                "response": response[:500] + "..." if len(response) > 500 else response
+            })
+            
+        except Exception as e:
+            self.response_display.delete('1.0', tk.END)
+            self.response_display.insert('1.0', f"Error: {e}")
+            messagebox.showerror("API Error", f"Failed to get response: {e}")
+    
+    def on_font_size_change(self, event=None):
+        """Change font size for all text widgets"""
+        try:
+            font_size = int(self.font_size_var.get())
+            new_font = ('Arial', font_size)
+            
+            for widget in self.text_widgets:
+                widget.config(font=new_font)
+                
+        except ValueError:
+            pass  # Invalid font size, ignore
+    
+    def update_status(self, message):
+        """Update the status label"""
+        self.status_label.config(text=message)
 
 def main():
-    root = tk.Tk()
-    app = InteractivePDFHighlighter(root)
-    root.mainloop()
-
+    """Main function to run the application"""
+    app = SimpleInteractivePDFHighlighter()
+    app.run()
 
 if __name__ == "__main__":
     main()
