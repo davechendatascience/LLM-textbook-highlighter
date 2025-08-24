@@ -1,13 +1,34 @@
+import sys
+import os
+
+# Add src and utils to path
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'src'))
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'utils'))
+
 from utils import *
 from llm import *
-import json
+from config import load_secrets, get_available_apis
 from highlight_utils import build_contextual_highlight_prompt, parse_llm_highlight_groups
 from tkinter import Tk, filedialog
 
 if __name__ == "__main__":
-    with open('secrets.json', 'r') as f:
-        secrets = json.load(f)
-    api_key = secrets['perplexity_api_key']
+    secrets = load_secrets()
+    available_apis = get_available_apis()
+    
+    if not available_apis:
+        raise ValueError("No API key found. Add 'gemini_api_key' or 'perplexity_api_key' to secrets.json")
+    
+    # Try Gemini first, fallback to Perplexity if key not found
+    if 'gemini' in available_apis:
+        api_key = secrets['gemini_api_key']
+        use_gemini = True
+        print("Using Gemini API")
+    elif 'perplexity' in available_apis:
+        api_key = secrets['perplexity_api_key']
+        use_gemini = False
+        print("Using Perplexity API")
+    else:
+        raise ValueError("No valid API configuration found")
 
     root = Tk()
     root.withdraw()
@@ -21,7 +42,13 @@ if __name__ == "__main__":
         print(f"Total chunks: {len(chunks)}")
         for i, chunk in enumerate(chunks):
             prompt = build_contextual_highlight_prompt(chunk)
-            llm_output = send_prompt_to_perplexity(prompt, api_key, model="sonar-pro", search_enabled=True)
+            # Web search disabled by default for cost savings - textbook content is self-contained
+            use_web_search = False  # Set to True if you need real-time web context
+            
+            if use_gemini:
+                llm_output = send_prompt_to_gemini(prompt, api_key, search_enabled=use_web_search)
+            else:
+                llm_output = send_prompt_to_perplexity(prompt, api_key, search_enabled=use_web_search)
             group_highlights = parse_llm_highlight_groups(llm_output, chunk)
             all_groups.extend(group_highlights)
             print(f"Processed chunk {i+1}/{len(chunks)} ({int((i+1)/len(chunks)*100)}%)")
