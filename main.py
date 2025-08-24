@@ -1,50 +1,45 @@
+#!/usr/bin/env python3
+"""
+Batch processing mode has been removed in favor of the interactive mode.
+This script now redirects to the interactive highlighter.
+"""
+
+print("=" * 60)
+print("NOTICE: Batch processing mode has been removed")
+print("=" * 60)
+print()
+print("The batch processing functionality has been removed to:")
+print("• Prevent wasting credits on a non-functional feature")
+print("• Focus development on the reliable interactive mode")
+print("• Simplify the codebase and reduce complexity")
+print()
+print("Please use the interactive mode instead:")
+print("  python run_interactive.py")
+print()
+print("The interactive mode provides:")
+print("• Visual PDF navigation and text selection")
+print("• Smart question generation with answer length control") 
+print("• Session tracking and note-keeping")
+print("• Cost-effective per-query usage")
+print()
+print("Redirecting to interactive mode in 3 seconds...")
+
+import time
+import subprocess
 import sys
 import os
 
-# Add src and utils to path
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'src'))
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'utils'))
+time.sleep(3)
 
-from utils import *
-from llm import send_prompt_to_perplexity
-from config import load_secrets, get_available_apis
-from highlight_utils import build_contextual_highlight_prompt, parse_llm_highlight_groups
-from tkinter import Tk, filedialog
+# Launch the interactive mode
+script_dir = os.path.dirname(os.path.abspath(__file__))
+interactive_script = os.path.join(script_dir, "run_interactive.py")
 
-if __name__ == "__main__":
-    secrets = load_secrets()
-    available_apis = get_available_apis()
-    
-    if not available_apis or 'perplexity' not in available_apis:
-        raise ValueError("No Perplexity API key found. Add 'perplexity_api_key' to secrets.json")
-    
-    api_key = secrets['perplexity_api_key']
-    print("Using Perplexity API")
-
-    root = Tk()
-    root.withdraw()
-    file_path = filedialog.askopenfilename()
-    root.withdraw()
-    output_path = filedialog.asksaveasfilename(defaultextension=".pdf", filetypes=[("PDF files", "*.pdf")], title="Save PDF as")
-
-    if file_path:
-        sentences, chunks, page_word_map = extract_sentences_and_chunks(file_path, chunk_size=100)
-        all_groups = []
-        print(f"Total chunks: {len(chunks)}")
-        for i, chunk in enumerate(chunks):
-            prompt = build_contextual_highlight_prompt(chunk)
-            # Web search disabled by default for cost savings - textbook content is self-contained
-            use_web_search = False  # Set to True if you need real-time web context
-            
-            llm_output = send_prompt_to_perplexity(prompt, api_key, search_enabled=use_web_search)
-            group_highlights = parse_llm_highlight_groups(llm_output, chunk)
-            all_groups.extend(group_highlights)
-            print(f"Processed chunk {i+1}/{len(chunks)} ({int((i+1)/len(chunks)*100)}%)")
-        print("Annotating PDF with highlights and grouped comments...")
-        if output_path:
-            highlight_sentences_in_pdf(file_path, all_groups, page_word_map, output_path)
-            print(f"PDF saved to: {output_path}")
-        else:
-            print("Save operation cancelled.")
-    else:
-        print("No PDF selected.")
+try:
+    subprocess.run([sys.executable, interactive_script], check=True)
+except FileNotFoundError:
+    print("Error: run_interactive.py not found")
+    print("Please run: python run_interactive.py")
+except Exception as e:
+    print(f"Error launching interactive mode: {e}")
+    print("Please run manually: python run_interactive.py")

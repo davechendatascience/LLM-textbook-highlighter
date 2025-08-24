@@ -11,10 +11,8 @@ python run_interactive.py
 
 Features a clean, intuitive interface using **fitz (PyMuPDF)** for fast and reliable text extraction from PDF documents.
 
-### Batch Processing Mode  
-```bash
-python main.py
-```
+### Legacy Notice
+The batch processing mode has been removed for system simplification and to prevent credit waste on non-functional features. Use the interactive mode for all PDF processing needs.
 
 ## 🏗️ Project Structure
 
@@ -22,12 +20,12 @@ python main.py
 LLM-textbook-highlighter/
 ├── src/                     # Core application modules
 │   ├── config.py           # Configuration and settings
-│   ├── simple_interactive_highlighter.py  # Simplified GUI application
+│   ├── interactive_highlighter.py  # Simplified GUI application
 │   ├── llm.py              # Perplexity API integration  
 │   └── utils.py            # Utility functions
 ├── tests/                   # Test PDFs for development
 ├── run_interactive.py       # Interactive GUI launcher
-├── main.py                 # Batch processing entry point
+├── main.py                 # Legacy redirect (use run_interactive.py instead)
 └── secrets.json            # API keys (create this file)
 ```
 
@@ -71,11 +69,9 @@ Create a `secrets.json` file in the root directory:
 - 🎨 **Font size control**: Adjustable text size for better readability
 - 📜 **Resizable panels**: Drag dividers to customize layout
 
-### Batch Processing Mode  
-- 📚 Process entire textbooks (hundreds of pages)
-- 🎯 Automated highlight generation
-- 💬 Contextual explanation comments
-- 📊 Grouped highlight organization
+### Removed Features
+- **Batch Processing**: Removed to prevent credit waste and focus on reliable interactive mode
+- **Hybrid OCR**: Simplified to fitz-only extraction for better reliability and performance
 
 ### Simplified Text Extraction
 - ⚡ **Fast and reliable**: Uses PyMuPDF (fitz) for consistent text extraction
