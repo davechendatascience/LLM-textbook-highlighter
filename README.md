@@ -4,12 +4,24 @@ A simplified, intelligent PDF highlighting and question-answering tool powered b
 
 ## 🚀 Quick Start
 
-### Interactive Mode (Recommended)
+### Cross-Platform Mode (Recommended)
+```bash
+python run_reader.py
+```
+
+**Features:**
+- **Reliable dropdowns**: PySide6 provides consistent dropdown functionality across all platforms
+- **Professional UI**: Native look and feel on Windows, macOS, and Linux
+- **Fast PDF rendering**: Uses PyMuPDF for efficient text extraction
+- **Cross-platform compatibility**: Works identically on all operating systems
+- **Better Mac compatibility**: PySide6 has improved compatibility with macOS
+
+### Legacy Tkinter Mode
 ```bash
 python run_interactive.py
 ```
 
-Features a clean, intuitive interface using **fitz (PyMuPDF)** for fast and reliable text extraction from PDF documents.
+**Note**: The Tkinter version has known dropdown responsiveness issues on some platforms. Use the PyQt6 version for the best experience.
 
 ### Legacy Notice
 The batch processing mode has been removed for system simplification and to prevent credit waste on non-functional features. Use the interactive mode for all PDF processing needs.
@@ -20,16 +32,21 @@ The batch processing mode has been removed for system simplification and to prev
 LLM-textbook-highlighter/
 ├── src/                     # Core application modules
 │   ├── config.py           # Configuration and settings
-│   ├── interactive_highlighter.py  # Simplified GUI application
+│   ├── reader.py  # Cross-platform GUI
 │   ├── llm.py              # Perplexity API integration  
 │   └── utils.py            # Utility functions
 ├── tests/                   # Test PDFs for development
-├── run_interactive.py       # Interactive GUI launcher
-├── main.py                 # Legacy redirect (use run_interactive.py instead)
+├── run_reader.py  # Cross-platform launcher
+├── main.py                 # Textbook highlighter
 └── secrets.json            # API keys (create this file)
 ```
 
 ## 🔧 Installation
+
+### Cross-Platform Installation
+```bash
+pip install -r requirements.txt
+```
 
 ### Windows (PowerShell)
 ```powershell
@@ -38,7 +55,7 @@ LLM-textbook-highlighter/
 
 ### Manual Installation
 ```bash
-pip install -r requirements.txt
+pip install PyQt6 PyMuPDF Pillow requests
 ```
 
 ## 🔑 API Configuration
@@ -51,10 +68,29 @@ Create a `secrets.json` file in the root directory:
 }
 ```
 
+**Getting a Perplexity API Key:**
+1. Visit [Perplexity AI](https://www.perplexity.ai/)
+2. Sign up for an account
+3. Go to your account settings
+4. Generate an API key
+5. Add it to your `secrets.json` file
+
 **Available Models:**
-- **sonar**: Fast question generation (~$1 per 1,000 queries)
-- **sonar-reasoning**: Detailed answers (~$5 per 1,000 queries)
+- **sonar**: Fast question generation and short/medium answers (~$1 per 1,000 queries)
+- **sonar-reasoning**: Detailed answers for complex questions (~$5 per 1,000 queries)
+
+**Model Selection:**
+- **Question Generation**: Always uses `sonar` for speed and clean formatting
+- **Answer Generation**: 
+  - `sonar` for short/medium answers (faster, cheaper)
+  - `sonar-reasoning` for long/comprehensive answers (better reasoning)
+- **Response Cleaning**: Automatically removes `<think>` tags from `sonar-reasoning` responses
+
+**Features:**
 - Web search enabled for comprehensive responses
+- Automatic response cleaning and formatting
+
+**Note:** The application will show clear error messages if the API key is missing or invalid.
 
 ## ✨ Features
 
