@@ -68,6 +68,8 @@ Create a `secrets.json` file in the root directory:
 - 📝 **Session tracking**: Automatic note-keeping with timestamps
 - 🎨 **Font size control**: Adjustable text size for better readability
 - 📜 **Resizable panels**: Drag dividers to customize layout
+- 🔍 **Zoom controls**: Adjust PDF zoom level (50% to 300%) with mouse wheel or buttons
+- 📐 **Panel sizing**: Adjust left/right panel widths with keyboard shortcuts or buttons
 
 ### Removed Features
 - **Batch Processing**: Removed to prevent credit waste and focus on reliable interactive mode
@@ -78,6 +80,12 @@ Create a `secrets.json` file in the root directory:
 - 🎯 **Word wrapping**: Text properly contained within display areas
 - 📋 **No complex setup**: Works out of the box without OCR dependencies
 - 🔍 **Consistent results**: Predictable extraction across different PDF types
+
+### Display Controls
+- **Zoom**: Use Ctrl+MouseWheel, toolbar dropdown (50%-300%), or Zoom In/Out buttons
+- **Panel Sizing**: Use Ctrl+Left/Right arrows or Wider/Narrower PDF buttons
+- **Reset Zoom**: Press Ctrl+0 to reset to 100% zoom
+- **Status Display**: Current zoom level shown in the control panel
 
 ## 🧪 Testing
 

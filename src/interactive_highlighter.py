@@ -59,7 +59,30 @@ class SimpleInteractivePDFHighlighter:
         self.image_width = 800
         self.image_height = 600
         
+        # Zoom and display settings
+        self.zoom_level = 1.0
+        self.base_zoom = 1.5  # Base zoom for PDF rendering
+        self.min_zoom = 0.5
+        self.max_zoom = 3.0
+        
         self.setup_ui()
+        self.setup_keyboard_shortcuts()
+    
+    def setup_keyboard_shortcuts(self):
+        """Setup keyboard shortcuts for zoom and panel controls"""
+        self.root.bind("<Control-plus>", lambda e: self.zoom_in())
+        self.root.bind("<Control-minus>", lambda e: self.zoom_out())
+        self.root.bind("<Control-0>", lambda e: self.reset_zoom())
+        self.root.bind("<Control-Left>", lambda e: self.narrow_pdf_panel())
+        self.root.bind("<Control-Right>", lambda e: self.widen_pdf_panel())
+    
+    def reset_zoom(self):
+        """Reset zoom to 100%"""
+        self.zoom_level = 1.0
+        self.update_zoom_display()
+        self.display_page()
+        self.update_zoom_status()
+        self.update_status("Zoom reset to 100%")
     
     def run(self):
         """Start the GUI application"""
@@ -75,14 +98,14 @@ class SimpleInteractivePDFHighlighter:
         self.setup_toolbar(main_frame)
         
         # Content area with paned window
-        paned = ttk.PanedWindow(main_frame, orient=tk.HORIZONTAL)
-        paned.pack(fill=tk.BOTH, expand=True, pady=(10, 0))
+        self.main_paned = ttk.PanedWindow(main_frame, orient=tk.HORIZONTAL)
+        self.main_paned.pack(fill=tk.BOTH, expand=True, pady=(10, 0))
         
         # Left panel - PDF viewer
-        self.setup_pdf_viewer(paned)
+        self.setup_pdf_viewer(self.main_paned)
         
         # Right panel - Controls and text output
-        self.setup_control_panel(paned)
+        self.setup_control_panel(self.main_paned)
     
     def setup_toolbar(self, parent):
         """Setup the toolbar with file operations"""
@@ -119,6 +142,25 @@ class SimpleInteractivePDFHighlighter:
         self.font_size_dropdown.pack(side=tk.LEFT, padx=(0, 10))
         self.font_size_dropdown.bind("<<ComboboxSelected>>", self.on_font_size_change)
         
+        # Zoom controls
+        ttk.Separator(toolbar, orient='vertical').pack(side=tk.LEFT, fill=tk.Y, padx=(10, 10))
+        ttk.Label(toolbar, text="Zoom:").pack(side=tk.LEFT, padx=(0, 5))
+        
+        self.zoom_var = tk.StringVar(value="100%")
+        self.zoom_dropdown = ttk.Combobox(toolbar, textvariable=self.zoom_var, width=8, state="readonly")
+        self.zoom_dropdown['values'] = ["50%", "75%", "100%", "125%", "150%", "175%", "200%", "250%", "300%"]
+        self.zoom_dropdown.pack(side=tk.LEFT, padx=(0, 5))
+        self.zoom_dropdown.bind("<<ComboboxSelected>>", self.on_zoom_change)
+        
+        ttk.Button(toolbar, text="Zoom In", command=self.zoom_in).pack(side=tk.LEFT, padx=(0, 2))
+        ttk.Button(toolbar, text="Zoom Out", command=self.zoom_out).pack(side=tk.LEFT, padx=(0, 10))
+        
+        # Panel size controls
+        ttk.Separator(toolbar, orient='vertical').pack(side=tk.LEFT, fill=tk.Y, padx=(10, 10))
+        ttk.Label(toolbar, text="Panel:").pack(side=tk.LEFT, padx=(0, 5))
+        ttk.Button(toolbar, text="Wider PDF", command=self.widen_pdf_panel).pack(side=tk.LEFT, padx=(0, 2))
+        ttk.Button(toolbar, text="Narrower PDF", command=self.narrow_pdf_panel).pack(side=tk.LEFT, padx=(0, 10))
+        
         # API status
         ttk.Separator(toolbar, orient='vertical').pack(side=tk.LEFT, fill=tk.Y, padx=(10, 10))
         api_status = "✓ Perplexity" if 'perplexity' in self.available_apis else "✗ No API"
@@ -147,9 +189,15 @@ class SimpleInteractivePDFHighlighter:
         self.pdf_canvas.bind("<B1-Motion>", self.on_mouse_drag)
         self.pdf_canvas.bind("<ButtonRelease-1>", self.on_mouse_up)
         
-        # Bind mousewheel for PDF canvas scrolling
+        # Bind mousewheel for PDF canvas scrolling and zooming
         def _on_pdf_mousewheel(event):
-            self.pdf_canvas.yview_scroll(int(-1*(event.delta/120)), "units")
+            if event.state & 0x4:  # Ctrl key pressed - zoom
+                if event.delta > 0:
+                    self.zoom_in()
+                else:
+                    self.zoom_out()
+            else:  # Normal scrolling
+                self.pdf_canvas.yview_scroll(int(-1*(event.delta/120)), "units")
         self.pdf_canvas.bind("<MouseWheel>", _on_pdf_mousewheel)
         
         # Also bind to the frame to catch mouse wheel when over scrollbars
@@ -191,12 +239,18 @@ class SimpleInteractivePDFHighlighter:
         instructions = ttk.Label(control_frame, text="Instructions:", font=('Arial', 12, 'bold'))
         instructions.pack(anchor='w', pady=(0, 5))
         
-        instructions_text = ttk.Label(control_frame, text="1. Open a PDF file\n2. Drag to select text region\n3. Click 'Extract Text' to get content\n4. Ask questions about the selected text", wraplength=300, justify='left')
+        instructions_text = ttk.Label(control_frame, text="1. Open a PDF file\n2. Drag to select text region\n3. Click 'Extract Text' to get content\n4. Ask questions about the selected text\n\nZoom: Use Ctrl+MouseWheel or toolbar buttons\nPanel: Use Ctrl+Left/Right arrows or toolbar buttons", wraplength=300, justify='left')
         instructions_text.pack(anchor='w', pady=(0, 15))
         
-        # Selection status
-        self.status_label = ttk.Label(control_frame, text="No selection", foreground="gray")
-        self.status_label.pack(anchor='w', pady=(0, 10))
+        # Selection status and zoom info
+        status_frame = ttk.Frame(control_frame)
+        status_frame.pack(anchor='w', pady=(0, 10))
+        
+        self.status_label = ttk.Label(status_frame, text="No selection", foreground="gray")
+        self.status_label.pack(side=tk.LEFT)
+        
+        self.zoom_status_label = ttk.Label(status_frame, text="Zoom: 100%", foreground="blue")
+        self.zoom_status_label.pack(side=tk.RIGHT)
         
         # Create a vertical paned window for resizable text areas
         text_paned = ttk.PanedWindow(control_frame, orient=tk.VERTICAL)
@@ -296,8 +350,9 @@ class SimpleInteractivePDFHighlighter:
         try:
             page = self.pdf_doc[self.current_page]
             
-            # Get page as image
-            mat = fitz.Matrix(1.5, 1.5)  # Zoom for better quality
+            # Get page as image with current zoom level
+            total_zoom = self.base_zoom * self.zoom_level
+            mat = fitz.Matrix(total_zoom, total_zoom)
             pix = page.get_pixmap(matrix=mat)
             img_data = pix.tobytes("ppm")
             
@@ -305,9 +360,12 @@ class SimpleInteractivePDFHighlighter:
             import io
             image = Image.open(io.BytesIO(img_data))
             
-            # Resize to fit display
+            # Store original image dimensions
             self.image_width, self.image_height = image.size
-            if self.image_width > DEFAULT_SETTINGS['pdf_display_width']:
+            
+            # Only resize if the image is too wide for the display area
+            # (but respect zoom level - don't downscale if user has zoomed in)
+            if self.zoom_level <= 1.0 and self.image_width > DEFAULT_SETTINGS['pdf_display_width']:
                 ratio = DEFAULT_SETTINGS['pdf_display_width'] / self.image_width
                 new_width = int(self.image_width * ratio)
                 new_height = int(self.image_height * ratio)
@@ -669,6 +727,80 @@ Question: {selected_question}
             self.response_display.delete('1.0', tk.END)
             self.response_display.insert('1.0', f"Error: {e}")
             messagebox.showerror("API Error", f"Failed to get response: {e}")
+    
+    def on_zoom_change(self, event=None):
+        """Handle zoom level change from dropdown"""
+        try:
+            zoom_text = self.zoom_var.get()
+            zoom_percent = int(zoom_text.replace('%', ''))
+            self.zoom_level = zoom_percent / 100.0
+            self.display_page()
+            self.update_zoom_status()
+            self.update_status(f"Zoom set to {zoom_text}")
+        except (ValueError, AttributeError):
+            pass
+    
+    def zoom_in(self):
+        """Increase zoom level"""
+        if self.zoom_level < self.max_zoom:
+            self.zoom_level = min(self.zoom_level + 0.25, self.max_zoom)
+            self.update_zoom_display()
+            self.display_page()
+            self.update_zoom_status()
+            self.update_status(f"Zoom: {int(self.zoom_level * 100)}%")
+    
+    def zoom_out(self):
+        """Decrease zoom level"""
+        if self.zoom_level > self.min_zoom:
+            self.zoom_level = max(self.zoom_level - 0.25, self.min_zoom)
+            self.update_zoom_display()
+            self.display_page()
+            self.update_zoom_status()
+            self.update_status(f"Zoom: {int(self.zoom_level * 100)}%")
+    
+    def update_zoom_display(self):
+        """Update the zoom dropdown to reflect current zoom level"""
+        zoom_percent = int(self.zoom_level * 100)
+        zoom_text = f"{zoom_percent}%"
+        
+        # Add custom zoom level to dropdown if not in standard values
+        current_values = list(self.zoom_dropdown['values'])
+        if zoom_text not in current_values:
+            current_values.append(zoom_text)
+            current_values.sort(key=lambda x: int(x.replace('%', '')))
+            self.zoom_dropdown['values'] = current_values
+        
+        self.zoom_var.set(zoom_text)
+    
+    def update_zoom_status(self):
+        """Update the zoom status label"""
+        if hasattr(self, 'zoom_status_label'):
+            zoom_percent = int(self.zoom_level * 100)
+            self.zoom_status_label.config(text=f"Zoom: {zoom_percent}%")
+    
+    def widen_pdf_panel(self):
+        """Make the PDF panel wider"""
+        try:
+            # Get current sash position and move it right
+            current_pos = self.main_paned.sashpos(0)
+            window_width = self.root.winfo_width()
+            if window_width > 1:  # Ensure window is properly sized
+                new_pos = min(current_pos + 50, window_width - 300)  # Leave at least 300px for control panel
+                self.main_paned.sashpos(0, new_pos)
+                self.update_status("PDF panel widened")
+        except Exception as e:
+            print(f"Error widening panel: {e}")
+    
+    def narrow_pdf_panel(self):
+        """Make the PDF panel narrower"""
+        try:
+            # Get current sash position and move it left
+            current_pos = self.main_paned.sashpos(0)
+            new_pos = max(current_pos - 50, 200)  # Leave at least 200px for PDF panel
+            self.main_paned.sashpos(0, new_pos)
+            self.update_status("PDF panel narrowed")
+        except Exception as e:
+            print(f"Error narrowing panel: {e}")
     
     def on_font_size_change(self, event=None):
         """Change font size for all text widgets"""
