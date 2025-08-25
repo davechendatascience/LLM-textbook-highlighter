@@ -1,6 +1,6 @@
-# LLM Textbook Highlighter
+# Cross-Platform PDF Reader with LLM Integration
 
-A simplified, intelligent PDF highlighting and question-answering tool powered by Perplexity AI. The system features fast text extraction, interactive GUI, and smart question generation with customizable answer lengths. Optimized for reliability and ease of use.
+A modern, intelligent PDF reader powered by Perplexity AI. Features cross-platform compatibility, fast text extraction, interactive GUI, and smart question generation with customizable answer lengths. Optimized for reliability and ease of use.
 
 ## 🚀 Quick Start
 
@@ -16,15 +16,7 @@ python run_reader.py
 - **Cross-platform compatibility**: Works identically on all operating systems
 - **Better Mac compatibility**: PySide6 has improved compatibility with macOS
 
-### Legacy Tkinter Mode
-```bash
-python run_interactive.py
-```
 
-**Note**: The Tkinter version has known dropdown responsiveness issues on some platforms. Use the PyQt6 version for the best experience.
-
-### Legacy Notice
-The batch processing mode has been removed for system simplification and to prevent credit waste on non-functional features. Use the interactive mode for all PDF processing needs.
 
 ## 🏗️ Project Structure
 
@@ -43,20 +35,16 @@ LLM-textbook-highlighter/
 
 ## 🔧 Installation
 
-### Cross-Platform Installation
+### Installation
 ```bash
 pip install -r requirements.txt
 ```
 
-### Windows (PowerShell)
-```powershell
-./install.ps1
-```
-
-### Manual Installation
-```bash
-pip install PyQt6 PyMuPDF Pillow requests
-```
+**Dependencies:**
+- PySide6 (cross-platform GUI)
+- PyMuPDF (PDF processing)
+- Pillow (image processing)
+- requests (API communication)
 
 ## 🔑 API Configuration
 
@@ -94,107 +82,77 @@ Create a `secrets.json` file in the root directory:
 
 ## ✨ Features
 
-### Interactive GUI Mode
-- 📖 Visual PDF navigation with page selector
-- 🖱️ Click-and-drag text selection  
-- 🎯 **Fast fitz extraction**: Reliable PyMuPDF text extraction
-- 🤖 **Smart question generation**: AI suggests relevant questions
-- 💬 **Custom Q&A**: Ask your own questions with web search
-- 🔧 **Answer length control**: Choose short, medium, long, or comprehensive responses
-- 📝 **Session tracking**: Automatic note-keeping with timestamps
-- 🎨 **Font size control**: Adjustable text size for better readability
-- 📜 **Resizable panels**: Drag dividers to customize layout
-- 🔍 **Zoom controls**: Adjust PDF zoom level (50% to 300%) with mouse wheel or buttons
-- 📐 **Panel sizing**: Adjust left/right panel widths with keyboard shortcuts or buttons
+### Cross-Platform PDF Reader
+- 📖 **Visual PDF navigation** with page selector and zoom controls
+- 🖱️ **Click-and-drag text selection** with visual feedback
+- 🎯 **Fast text extraction** using PyMuPDF (fitz)
+- 🤖 **AI-powered question generation** from selected text
+- 💬 **Interactive Q&A** with customizable answer lengths
+- 🎨 **Font size controls** for better readability
+- 📜 **Resizable panels** with drag dividers
+- 🔍 **Zoom controls** (25% to 400%) with mouse wheel or buttons
+- 📐 **Panel sizing** with keyboard shortcuts (Ctrl+Left/Right)
 
-### Removed Features
-- **Batch Processing**: Removed to prevent credit waste and focus on reliable interactive mode
-- **Hybrid OCR**: Simplified to fitz-only extraction for better reliability and performance
+### LLM Integration
+- **Smart model selection**: Uses `sonar` for questions, `sonar-reasoning` for complex answers
+- **Response cleaning**: Automatically removes `<think>` tags from LLM responses
+- **Cost optimization**: Chooses appropriate models based on answer length
+- **Error handling**: Clear feedback for missing or invalid API keys
 
-### Simplified Text Extraction
-- ⚡ **Fast and reliable**: Uses PyMuPDF (fitz) for consistent text extraction
-- 🎯 **Word wrapping**: Text properly contained within display areas
-- 📋 **No complex setup**: Works out of the box without OCR dependencies
-- 🔍 **Consistent results**: Predictable extraction across different PDF types
-
-### Display Controls
-- **Zoom**: Use Ctrl+MouseWheel, toolbar dropdown (50%-300%), or Zoom In/Out buttons
-- **Panel Sizing**: Use Ctrl+Left/Right arrows or Wider/Narrower PDF buttons
-- **Reset Zoom**: Press Ctrl+0 to reset to 100% zoom
-- **Status Display**: Current zoom level shown in the control panel
+### Text Extraction
+- ⚡ **Fast and reliable**: Uses PyMuPDF for consistent text extraction
+- 🎯 **Visual selection**: Red selection box shows exactly what will be extracted
+- 📋 **No setup required**: Works out of the box
+- 🔍 **Cross-platform**: Consistent behavior on Windows, macOS, and Linux
 
 ## 🧪 Testing
 
-```bash
-# Validate restructured codebase
-python tests/test_restructured.py
-
-# Test Google GenAI integration
-python tests/test_google_genai.py
-
-# Test interactive highlighter functionality
-python tests/test_interactive_launch.py
-
-# Test with real textbook (classical mechanics)
-python tests/test_real_textbook.py
-
-# Run comprehensive test suite
-python tests/run_tests.py
-
-# Manual testing with generated PDFs
-python tests/manual_test.py
-
-# Create test PDFs with mathematical content
-python tests/create_realistic_math_pdf.py
-```
+The application includes test PDFs in the `tests/` directory for development and validation.
 
 ## 📊 Mathematical Symbol Support
 
-The system includes advanced support for mathematical notation:
+The system supports mathematical notation through PyMuPDF text extraction:
 
 - **Greek Letters**: α, β, γ, δ, λ, μ, σ, θ, ω, Γ, Δ, Λ, Σ, Θ, Ω
 - **Operators**: ∑, ∫, ∂, ∇, ≈, ≠, ≤, ≥, ∞
 - **Sets**: ∈, ∉, ⊆, ∪, ∩
-- **Corrupted Symbol Recovery**: Automatic fixing of PDF extraction artifacts
 
 ## 🔍 Usage Examples
 
-### Interactive Highlighting
-1. Launch: `python run_interactive.py`
-2. **Check OCR Status**: System displays available OCR capabilities on startup
-   - "General + Math": Full hybrid OCR with mathematical enhancement
-   - "General only": Standard OCR without specialized math processing  
-   - "Traditional": PyMuPDF extraction only
-3. Load PDF using the file menu
-4. Navigate pages with the page selector
-5. **Enable Hybrid OCR** (optional): Toggle for enhanced text extraction
-6. Click and drag to select text regions
-7. Get AI explanations and suggested questions
-8. Export session notes
+### PDF Reader with LLM Integration
+1. **Launch**: `python run_reader.py`
+2. **Load PDF**: Use "Open PDF" button to select a file
+3. **Navigate**: Use Previous/Next buttons or page input
+4. **Select Text**: Click and drag to create a red selection box
+5. **Extract Text**: Click "Extract Text" to get selected content
+6. **Generate Questions**: Click "Generate Questions" for AI-suggested questions
+7. **Ask Questions**: Type custom questions or select from dropdown
+8. **Adjust Settings**: Use font size and answer length controls
 
-### Batch Processing
-1. Run: `python main.py`
-2. Select input PDF file
-3. Choose output location
-4. System automatically processes entire document
-5. Receive highlighted PDF with grouped annotations
+### Textbook Highlighter (Legacy)
+For basic textbook highlighting functionality:
+```bash
+python main.py
+```
 
 ## 🛠️ Development
 
-### Adding New Extraction Methods
-1. Implement in `extraction_methods/`
-2. Register in `pdf_processor.py`
-3. Add tests in `tests/`
+### Architecture
+- **GUI**: PySide6-based cross-platform interface
+- **PDF Processing**: PyMuPDF for text extraction and rendering
+- **LLM Integration**: Perplexity API with smart model selection
+- **Configuration**: JSON-based settings and API key management
 
-### Extending Symbol Support
-1. Update `symbol_fixer.py` mapping tables
-2. Add pattern recognition rules
-3. Test with mathematical PDFs
+### Key Components
+- `src/reader.py`: Main application with GUI and PDF handling
+- `src/llm.py`: Perplexity API integration
+- `src/config.py`: Configuration and secrets management
+- `src/utils.py`: Utility functions
 
 ## 📈 Performance
 
-- **Large Documents**: Optimized for textbooks (800+ pages)
-- **Memory Efficient**: Processes one page at a time
-- **Smart Caching**: Avoids redundant API calls
-- **Configurable Chunking**: Adjustable for cost vs accuracy  
+- **Cross-platform**: Consistent performance on Windows, macOS, and Linux
+- **Memory efficient**: Processes one page at a time
+- **Fast rendering**: PyMuPDF provides quick PDF display
+- **Smart caching**: Avoids redundant API calls  
 
