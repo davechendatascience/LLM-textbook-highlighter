@@ -957,12 +957,18 @@ class MainWindow(QMainWindow):
                 self.status_label.setText("API key missing")
                 return
             
+            # Detect language of the extracted text
+            detected_language = self.detect_language(extracted_text)
+            language_instruction = self.get_language_instruction(detected_language)
+            
             # Prepare the prompt for the LLM
             prompt = f"""Based on the following text, please answer this question:
 
 Text: {extracted_text}
 
 Question: {question}
+
+{language_instruction}
 
 Please provide a clear and accurate answer based only on the information in the text above."""
 
@@ -982,7 +988,7 @@ Please provide a clear and accurate answer based only on the information in the 
                 # Clean up response - remove <think> tags if present
                 cleaned_response = self.clean_llm_response(response)
                 self.response_text.setText(cleaned_response)
-                self.status_label.setText(f"Question answered ({len(cleaned_response)} characters)")
+                self.status_label.setText(f"Question answered in {detected_language} ({len(cleaned_response)} characters)")
             else:
                 self.response_text.setText("Error: Could not get response from LLM. Please check your API key.")
                 self.status_label.setText("LLM error")
@@ -1007,11 +1013,17 @@ Please provide a clear and accurate answer based only on the information in the 
                 self.status_label.setText("API key missing")
                 return
             
+            # Detect language of the extracted text
+            detected_language = self.detect_language(extracted_text)
+            language_instruction = self.get_language_instruction(detected_language)
+            
             # Prepare the prompt for question generation
             prompt = f"""Based on the following text, generate exactly 5 relevant questions that could be asked about this content. 
             Make the questions diverse and interesting, covering different aspects of the text.
 
 Text: {extracted_text}
+
+{language_instruction}
 
 Instructions:
 - Generate exactly 5 questions
@@ -1054,7 +1066,7 @@ Questions:"""
                 self.suggested_questions_combo.clear()
                 if unique_questions:
                     self.suggested_questions_combo.addItems(unique_questions)
-                    self.status_label.setText(f"Generated {len(unique_questions)} questions")
+                    self.status_label.setText(f"Generated {len(unique_questions)} questions in {detected_language}")
                 else:
                     self.status_label.setText("No valid questions generated")
                 self._question_selection_changing = False
@@ -1066,6 +1078,73 @@ Questions:"""
             QMessageBox.warning(self, "Error", f"Error generating questions: {str(e)}")
             self.status_label.setText("Error occurred")
             print(f"Question generation error: {e}")
+    
+    def detect_language(self, text):
+        """Simple language detection based on character sets"""
+        if not text:
+            return "English"
+        
+        # Count characters from different scripts
+        import re
+        
+        # Chinese characters (simplified and traditional)
+        chinese_chars = len(re.findall(r'[\u4e00-\u9fff]', text))
+        
+        # Japanese characters (hiragana, katakana, kanji)
+        japanese_chars = len(re.findall(r'[\u3040-\u309f\u30a0-\u30ff\u4e00-\u9fff]', text))
+        
+        # Korean characters
+        korean_chars = len(re.findall(r'[\uac00-\ud7af]', text))
+        
+        # Arabic characters
+        arabic_chars = len(re.findall(r'[\u0600-\u06ff]', text))
+        
+        # Cyrillic characters (Russian, etc.)
+        cyrillic_chars = len(re.findall(r'[\u0400-\u04ff]', text))
+        
+        # Thai characters
+        thai_chars = len(re.findall(r'[\u0e00-\u0e7f]', text))
+        
+        # Hindi/Devanagari characters
+        devanagari_chars = len(re.findall(r'[\u0900-\u097f]', text))
+        
+        # Count total non-ASCII characters
+        total_non_ascii = len(re.findall(r'[^\x00-\x7f]', text))
+        
+        # Determine language based on character counts
+        if chinese_chars > 10:
+            return "Chinese"
+        elif japanese_chars > 10:
+            return "Japanese"
+        elif korean_chars > 10:
+            return "Korean"
+        elif arabic_chars > 10:
+            return "Arabic"
+        elif cyrillic_chars > 10:
+            return "Russian"
+        elif thai_chars > 10:
+            return "Thai"
+        elif devanagari_chars > 10:
+            return "Hindi"
+        elif total_non_ascii > 20:
+            return "Non-English"  # Generic for other languages
+        else:
+            return "English"
+    
+    def get_language_instruction(self, language):
+        """Get language-specific instruction for LLM prompts"""
+        language_instructions = {
+            "Chinese": "请用中文回答。请用中文生成问题。",
+            "Japanese": "日本語で答えてください。日本語で質問を生成してください。",
+            "Korean": "한국어로 답변해 주세요. 한국어로 질문을 생성해 주세요.",
+            "Arabic": "يرجى الإجابة باللغة العربية. يرجى إنشاء الأسئلة باللغة العربية.",
+            "Russian": "Пожалуйста, отвечайте на русском языке. Пожалуйста, создавайте вопросы на русском языке.",
+            "Thai": "กรุณาตอบเป็นภาษาไทย กรุณาสร้างคำถามเป็นภาษาไทย",
+            "Hindi": "कृपया हिंदी में जवाब दें। कृपया हिंदी में प्रश्न उत्पन्न करें।",
+            "Non-English": "Please respond in the same language as the text. Please generate questions in the same language as the text.",
+            "English": "Please respond in English. Please generate questions in English."
+        }
+        return language_instructions.get(language, "Please respond in the same language as the text.")
     
     def clean_llm_response(self, response):
         """Clean up LLM response by removing <think> tags and other formatting"""
@@ -1106,12 +1185,18 @@ Questions:"""
                 self.status_label.setText("API key missing")
                 return
             
+            # Detect language of the extracted text
+            detected_language = self.detect_language(extracted_text)
+            language_instruction = self.get_language_instruction(detected_language)
+            
             # Prepare the prompt for the LLM
             prompt = f"""Based on the following text, please answer this question:
 
 Text: {extracted_text}
 
 Question: {selected_question}
+
+{language_instruction}
 
 Please provide a clear and accurate answer based only on the information in the text above."""
 
@@ -1131,7 +1216,7 @@ Please provide a clear and accurate answer based only on the information in the 
                 # Clean up response - remove <think> tags if present
                 cleaned_response = self.clean_llm_response(response)
                 self.response_text.setText(cleaned_response)
-                self.status_label.setText(f"Question answered ({len(cleaned_response)} characters)")
+                self.status_label.setText(f"Question answered in {detected_language} ({len(cleaned_response)} characters)")
             else:
                 self.response_text.setText("Error: Could not get response from LLM. Please check your API key.")
                 self.status_label.setText("LLM error")
