@@ -92,8 +92,10 @@ Create a `secrets.json` file in the root directory:
 - 📖 **Visual PDF navigation** with page selector and zoom controls
 - 🖱️ **Click-and-drag text selection** with visual feedback
 - 🎯 **Fast text extraction** using PyMuPDF (fitz)
+- 🌍 **Automatic language detection** and multilingual responses (Chinese, Japanese, Korean, Arabic, Russian, Thai, Hindi, and more)
 - 🤖 **AI-powered question generation** from selected text
 - 💬 **Interactive Q&A** with customizable answer lengths
+- 📄 **Context window selection** (±0, ±1, ±2, ±5 pages) for multi-page text extraction
 - 🎨 **Font size controls** for better readability
 - 📜 **Resizable panels** with drag dividers
 - 🔍 **Zoom controls** (25% to 400%) with mouse wheel or buttons
