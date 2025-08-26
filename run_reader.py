@@ -11,7 +11,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'src'))
 
 try:
     from reader import main
-    print("Starting Cross-Platform PDF Reader...")
+    print("Starting LLM PDF Reader...")
     main()
 except ImportError as e:
     print(f"Error: {e}")

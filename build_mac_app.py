@@ -42,7 +42,7 @@ def build_mac_app():
         "pyinstaller",
         "--onefile",                    # Single executable
         "--windowed",                   # No console window on Mac
-        "--name=PDFReader",             # App name
+        "--name=LLM PDF Reader",             # App name
         "--icon=assets/icon.icns",      # App icon (if available)
         "--add-data=src:src",           # Include source modules
         "--hidden-import=PySide6.QtCore",
