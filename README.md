@@ -5,7 +5,7 @@ A modern, intelligent PDF reader powered by Perplexity AI. Features cross-platfo
 ## 🚀 Quick Start
 
 ### Option 1: Install from Package (Recommended)
-Download the latest installer from the `installations/` folder:
+Download the latest installer from the [GitHub Releases](https://github.com/yourusername/LLM-textbook-highlighter/releases):
 - **macOS**: `LLM-PDF-Reader-Installer.dmg` (6.7MB) - Drag & drop installation
 - **All Platforms**: `LLM-PDF-Reader-Installer.zip` (19.4MB) - Extract and run
 

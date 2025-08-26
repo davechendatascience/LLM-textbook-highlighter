@@ -52,6 +52,7 @@ CLAUDE.md
 *.pkg
 *.zip
 installer/
+installations/
 pkg_temp/
 dmg_temp/
 *.spec
