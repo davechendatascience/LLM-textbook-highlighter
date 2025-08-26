@@ -1,10 +1,15 @@
-# Cross-Platform PDF Reader with LLM Integration
+# LLM PDF Reader
 
 A modern, intelligent PDF reader powered by Perplexity AI. Features cross-platform compatibility, fast text extraction, interactive GUI, and smart question generation with customizable answer lengths. Optimized for reliability and ease of use.
 
 ## 🚀 Quick Start
 
-### Cross-Platform Mode (Recommended)
+### Option 1: Install from Package (Recommended)
+Download the latest installer from the `installations/` folder:
+- **macOS**: `LLM-PDF-Reader-Installer.dmg` (6.7MB) - Drag & drop installation
+- **All Platforms**: `LLM-PDF-Reader-Installer.zip` (19.4MB) - Extract and run
+
+### Option 2: Run from Source
 ```bash
 python run_reader.py
 ```
@@ -15,6 +20,7 @@ python run_reader.py
 - **Fast PDF rendering**: Uses PyMuPDF for efficient text extraction
 - **Cross-platform compatibility**: Works identically on all operating systems
 - **Better Mac compatibility**: PySide6 has improved compatibility with macOS
+- **Built-in API configuration**: Easy setup for Perplexity API key
 
 
 
@@ -82,7 +88,7 @@ Create a `secrets.json` file in the root directory:
 
 ## ✨ Features
 
-### Cross-Platform PDF Reader
+### LLM PDF Reader
 - 📖 **Visual PDF navigation** with page selector and zoom controls
 - 🖱️ **Click-and-drag text selection** with visual feedback
 - 🎯 **Fast text extraction** using PyMuPDF (fitz)
@@ -117,17 +123,36 @@ The system supports mathematical notation through PyMuPDF text extraction:
 - **Operators**: ∑, ∫, ∂, ∇, ≈, ≠, ≤, ≥, ∞
 - **Sets**: ∈, ∉, ⊆, ∪, ∩
 
+## 📦 Installation
+
+### macOS Users
+1. Download `LLM-PDF-Reader-Installer.dmg` from the `installations/` folder
+2. Double-click to mount the DMG
+3. Drag "LLM PDF Reader.app" to your Applications folder
+4. Launch from Applications or Spotlight
+
+### All Platforms
+1. Download `LLM-PDF-Reader-Installer.zip` from the `installations/` folder
+2. Extract the ZIP file
+3. Run the application directly
+
+### First-Time Setup
+1. **Configure API Key**: Enter your Perplexity API key in the configuration section
+2. **Save Settings**: Click "Save" to store your API key
+3. **Start Reading**: Open a PDF and begin using the LLM features
+
 ## 🔍 Usage Examples
 
 ### PDF Reader with LLM Integration
-1. **Launch**: `python run_reader.py`
-2. **Load PDF**: Use "Open PDF" button to select a file
-3. **Navigate**: Use Previous/Next buttons or page input
-4. **Select Text**: Click and drag to create a red selection box
-5. **Extract Text**: Click "Extract Text" to get selected content
-6. **Generate Questions**: Click "Generate Questions" for AI-suggested questions
-7. **Ask Questions**: Type custom questions or select from dropdown
-8. **Adjust Settings**: Use font size and answer length controls
+1. **Launch**: Open the installed application or run `python run_reader.py`
+2. **Configure API**: Enter your Perplexity API key (first time only)
+3. **Load PDF**: Use "Open PDF" button to select a file
+4. **Navigate**: Use Previous/Next buttons or page input
+5. **Select Text**: Click and drag to create a red selection box
+6. **Extract Text**: Click "Extract Text" to get selected content
+7. **Generate Questions**: Click "Generate Questions" for AI-suggested questions
+8. **Ask Questions**: Type custom questions or select from dropdown
+9. **Adjust Settings**: Use font size and answer length controls
 
 ### Textbook Highlighter (Legacy)
 For basic textbook highlighting functionality:
