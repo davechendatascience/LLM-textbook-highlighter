@@ -46,3 +46,17 @@ Thumbs.db
 
 # Claude
 CLAUDE.md
+
+# Packaging and Installation
+*.dmg
+*.pkg
+*.zip
+installer/
+pkg_temp/
+dmg_temp/
+*.spec
+build/
+dist/
+assets/icon_pngs/
+assets/icon.iconset/
+install_pdf_reader.sh

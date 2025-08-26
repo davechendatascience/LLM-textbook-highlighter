@@ -156,27 +156,5 @@ python main.py
 - **Fast rendering**: PyMuPDF provides quick PDF display
 - **Smart caching**: Avoids redundant API calls
 
-## 📦 Mac App Packaging
-
-The PDF Reader can be packaged into a standalone Mac application using PyInstaller:
-
-```bash
-# Quick build
-./build.sh
-
-# Interactive build with options
-python build_mac_app.py
-
-# Manual build
-pyinstaller PDFReader.spec
-```
-
-**Features:**
-- ✅ **Standalone executable**: No Python installation required
-- ✅ **Native Mac app**: Proper .app bundle with file associations
-- ✅ **PDF integration**: Double-click PDFs to open in the app
-- ✅ **High DPI support**: Retina display compatibility
-- ✅ **Dark mode**: Automatic theme switching
-
-See [PACKAGING.md](PACKAGING.md) for detailed instructions and troubleshooting.  
+  
 
