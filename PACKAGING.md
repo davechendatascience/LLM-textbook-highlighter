@@ -1,261 +1,210 @@
-# 🍎 Mac App Packaging Guide
+# LLM PDF Reader - Packaging Guide
 
-This guide explains how to package the PDF Reader into a standalone Mac application that can be distributed and installed without requiring Python or dependencies.
+This guide explains how to build and package the LLM PDF Reader application for distribution.
 
-## 📋 Prerequisites
+## Prerequisites
 
-- **macOS**: 10.13 or later
-- **Python**: 3.8+ (for building)
-- **Xcode Command Line Tools**: `xcode-select --install`
+### Required Tools
+- Python 3.11+ with virtual environment
+- PyInstaller (installed automatically)
+- macOS (for building macOS apps)
 
-## 🚀 Quick Build
-
-### Option 1: Simple Build Script
+### Dependencies
+All dependencies are managed in the virtual environment:
 ```bash
-# Install build dependencies
-pip install -r requirements-build.txt
-
-# Run the build script
-./build.sh
+source .venv/bin/activate
+pip install -r requirements.txt
 ```
 
-### Option 2: Interactive Build Script
+## Quick Build
+
+### 1. Activate Virtual Environment
 ```bash
-# Run the interactive builder
+source .venv/bin/activate
+```
+
+### 2. Build the App
+```bash
 python build_mac_app.py
 ```
+Choose option 2 for `.app bundle` when prompted.
 
-### Option 3: Manual PyInstaller
+### 3. Create Installers
 ```bash
-# Install PyInstaller
-pip install pyinstaller
+# Create DMG installer
+bash create_simple_dmg.sh
 
-# Build using spec file
-pyinstaller PDFReader.spec
+# Create ZIP installer
+cd dist && zip -r "../LLM-PDF-Reader-Installer.zip" "LLM PDF Reader.app" && cd ..
 ```
 
-## 📦 Build Options
+## Manual Build Process
 
-### 1. Single Executable (`--onefile`)
-- **Pros**: Single file, easy to distribute
-- **Cons**: Slower startup, larger memory usage
-- **Use case**: Simple distribution, embedded systems
-
-### 2. App Bundle (`--onedir`)
-- **Pros**: Faster startup, more Mac-like
-- **Cons**: Multiple files, larger disk space
-- **Use case**: Standard Mac app installation
-
-## 🔧 Configuration
-
-### PyInstaller Spec File (`PDFReader.spec`)
-The spec file contains advanced configuration:
-
-- **Hidden imports**: All required dependencies
-- **Data files**: Source modules and assets
-- **Exclusions**: Unnecessary modules to reduce size
-- **App bundle settings**: Mac-specific configuration
-
-### Key Settings
-```python
-# App bundle configuration
-'CFBundleName': 'PDF Reader',
-'CFBundleVersion': '1.0.0',
-'LSMinimumSystemVersion': '10.13.0',
-'NSHighResolutionCapable': True,
-
-# PDF file association
-'CFBundleDocumentTypes': [
-    {
-        'CFBundleTypeName': 'PDF Document',
-        'CFBundleTypeExtensions': ['pdf'],
-        'CFBundleTypeRole': 'Viewer',
-    }
-]
-```
-
-## 📱 App Features
-
-### Built-in Capabilities
-- ✅ **PDF Association**: Opens PDFs by double-clicking
-- ✅ **Native Mac UI**: Proper window management
-- ✅ **High DPI Support**: Retina display compatibility
-- ✅ **Dark Mode**: Automatic theme switching
-- ✅ **App Sandboxing**: Secure execution environment
-
-### File Associations
-The app automatically registers as a PDF viewer:
-- Double-click PDF files to open in the app
-- Right-click → "Open With" → PDF Reader
-- Drag and drop PDF files onto the app
-
-## 🎨 Customization
-
-### Adding an App Icon
-1. Create an `.icns` file (512x512 recommended)
-2. Place it in `assets/icon.icns`
-3. Update the spec file:
-```python
-icon='assets/icon.icns'
-```
-
-### Custom App Name
-Edit `PDFReader.spec`:
-```python
-name='YourAppName',
-'CFBundleName': 'Your App Name',
-'CFBundleDisplayName': 'Your App Name',
-```
-
-### Version Information
-Update the spec file:
-```python
-'CFBundleVersion': '1.2.3',
-'CFBundleShortVersionString': '1.2.3',
-```
-
-## 📦 Distribution
-
-### Local Installation
+### Step 1: Clean Previous Builds
 ```bash
-# Copy to Applications
-cp -R dist/PDFReader.app /Applications/
-
-# Set permissions
-chmod +x /Applications/PDFReader.app/Contents/MacOS/PDFReader
+rm -rf build dist
 ```
 
-### Creating a DMG
+### Step 2: Build with PyInstaller
 ```bash
-# Install create-dmg
-brew install create-dmg
+pyinstaller --onefile --windowed \
+  --name="LLM PDF Reader" \
+  --icon=assets/icon.icns \
+  --add-data=src:src \
+  --hidden-import=PySide6.QtCore \
+  --hidden-import=PySide6.QtGui \
+  --hidden-import=PySide6.QtWidgets \
+  --hidden-import=fitz \
+  --hidden-import=PIL \
+  --hidden-import=requests \
+  run_reader.py
+```
 
-# Create DMG
-create-dmg \
-  --volname "PDF Reader" \
-  --window-pos 200 120 \
-  --window-size 600 300 \
-  --icon-size 100 \
-  --icon "PDFReader.app" 175 120 \
-  --hide-extension "PDFReader.app" \
-  --app-drop-link 425 120 \
-  "PDFReader.dmg" \
-  "dist/"
+### Step 3: Test the App
+```bash
+./dist/LLM\ PDF\ Reader
+```
+
+### Step 4: Create Installers
+
+#### DMG Installer (Recommended)
+```bash
+bash create_simple_dmg.sh
+```
+
+#### ZIP Installer
+```bash
+cd dist && zip -r "../LLM-PDF-Reader-Installer.zip" "LLM PDF Reader.app" && cd ..
+```
+
+## File Structure
+
+### Generated Files
+- `dist/LLM PDF Reader` - Single executable
+- `dist/LLM PDF Reader.app` - macOS app bundle
+- `LLM-PDF-Reader-Installer.dmg` - DMG installer (62MB)
+- `LLM-PDF-Reader-Installer.zip` - ZIP installer (119MB)
+
+### Key Components
+- **App Bundle**: Contains all dependencies and resources
+- **Icon**: `assets/icon.icns` - Application icon
+- **Source Code**: `src/` directory bundled with the app
+- **Dependencies**: PySide6, PyMuPDF, Pillow, requests, etc.
+
+## Troubleshooting
+
+### Common Issues
+
+#### 1. "No module named 'PySide6'"
+**Solution**: Ensure virtual environment is activated
+```bash
+source .venv/bin/activate
+```
+
+#### 2. App crashes on launch
+**Solution**: Check if all dependencies are installed
+```bash
+pip install -r requirements.txt
+```
+
+#### 3. Build fails with symlink errors
+**Solution**: Use `--onefile` mode instead of `--onedir`
+```bash
+pyinstaller --onefile --windowed ...
+```
+
+#### 4. App opens and closes immediately
+**Solution**: Run from terminal to see error messages
+```bash
+./dist/LLM\ PDF\ Reader
+```
+
+### Build Verification
+
+#### Test the App
+```bash
+# Test executable
+./dist/LLM\ PDF\ Reader
+
+# Test app bundle
+open "dist/LLM PDF Reader.app"
+```
+
+#### Check File Sizes
+- Executable: ~64MB
+- App Bundle: ~64MB
+- DMG Installer: ~62MB
+- ZIP Installer: ~119MB
+
+## Distribution
+
+### GitHub Release
+1. Upload both installers to GitHub release
+2. Update README.md with download links
+3. Tag the release with version number
+
+### File Naming Convention
+- `LLM-PDF-Reader-Installer.dmg` - macOS DMG
+- `LLM-PDF-Reader-Installer.zip` - Cross-platform ZIP
+- Version format: `v1.0.0`, `v1.1.0`, etc.
+
+### Release Notes Template
+```markdown
+## LLM PDF Reader v1.0.0
+
+### Features
+- Cross-platform PDF reading
+- AI-powered question generation
+- Interactive text selection
+- Built-in API configuration
+
+### Downloads
+- **macOS**: [LLM-PDF-Reader-Installer.dmg](link)
+- **All Platforms**: [LLM-PDF-Reader-Installer.zip](link)
+
+### Installation
+1. Download the appropriate installer
+2. Follow the installation instructions
+3. Configure your Perplexity API key
+4. Start reading PDFs with AI assistance
+```
+
+## Advanced Configuration
+
+### Custom Icon
+```bash
+# Generate new icon
+python create_llm_icon.py
+
+# Use custom icon in build
+pyinstaller --icon=assets/custom_icon.icns ...
 ```
 
 ### Code Signing (Optional)
 ```bash
 # Sign the app (requires Apple Developer account)
-codesign --force --deep --sign "Developer ID Application: Your Name" dist/PDFReader.app
-
-# Verify signature
-codesign --verify --verbose dist/PDFReader.app
+codesign --force --deep --sign "Developer ID Application: Your Name" "dist/LLM PDF Reader.app"
 ```
 
-## 🔍 Troubleshooting
-
-### Common Issues
-
-#### 1. "App is damaged" Error
+### Notarization (Optional)
 ```bash
-# Remove quarantine attribute
-xattr -cr dist/PDFReader.app
+# Notarize for distribution outside App Store
+xcrun altool --notarize-app --primary-bundle-id "com.llmpdfreader.app" --username "your-apple-id" --password "app-specific-password" --file "LLM-PDF-Reader-Installer.dmg"
 ```
 
-#### 2. Missing Dependencies
-```bash
-# Check what's missing
-otool -L dist/PDFReader.app/Contents/MacOS/PDFReader
+## Maintenance
 
-# Rebuild with explicit imports
-pyinstaller --hidden-import=missing_module PDFReader.spec
-```
+### Regular Tasks
+1. Update dependencies: `pip install -r requirements.txt --upgrade`
+2. Test build process after dependency updates
+3. Update version numbers in release notes
+4. Clean old builds: `rm -rf build dist *.dmg *.zip`
 
-#### 3. Large App Size
-- Use `--exclude-module` to remove unused modules
-- Enable UPX compression: `--upx-dir=/path/to/upx`
-- Use `--onefile` for single executable
+### Version Management
+- Update version in `run_reader.py` if needed
+- Tag releases with semantic versioning
+- Keep changelog updated
 
-#### 4. PySide6 Issues
-```bash
-# Ensure PySide6 is properly included
-pyinstaller --collect-all=PySide6 PDFReader.spec
-```
+---
 
-### Debug Mode
-```bash
-# Build with console for debugging
-pyinstaller --console PDFReader.spec
-
-# Check app logs
-Console.app → Search for "PDFReader"
-```
-
-## 📊 Performance Optimization
-
-### Size Reduction
-- **Exclude modules**: Remove unused dependencies
-- **UPX compression**: Compress binaries
-- **Stripping**: Remove debug symbols
-- **Single file**: Use `--onefile` option
-
-### Startup Speed
-- **App bundle**: Use `--onedir` for faster startup
-- **Lazy loading**: Import modules on demand
-- **Precompiled**: Use `.pyc` files
-
-## 🔒 Security Considerations
-
-### App Sandboxing
-- The app runs in a sandboxed environment
-- Limited file system access
-- Network access for API calls only
-
-### Code Signing
-- Sign with Apple Developer ID for distribution
-- Prevents "unidentified developer" warnings
-- Enables Gatekeeper compatibility
-
-### Notarization (macOS 10.15+)
-```bash
-# Submit for notarization
-xcrun altool --notarize-app \
-  --primary-bundle-id "com.pdfreader.app" \
-  --username "your-apple-id" \
-  --password "app-specific-password" \
-  --file "PDFReader.dmg"
-```
-
-## 📈 Advanced Features
-
-### Auto-Updates
-- Implement Sparkle framework
-- Check for updates on startup
-- Download and install automatically
-
-### Crash Reporting
-- Integrate Crashlytics or similar
-- Collect crash reports automatically
-- Send to analytics service
-
-### Analytics
-- Track app usage (with user consent)
-- Monitor performance metrics
-- Identify common issues
-
-## 🎯 Best Practices
-
-1. **Test thoroughly** on different macOS versions
-2. **Use virtual machines** for testing
-3. **Keep dependencies minimal** to reduce size
-4. **Document installation process** for users
-5. **Provide uninstall instructions**
-6. **Monitor app performance** after distribution
-
-## 📞 Support
-
-For packaging issues:
-1. Check PyInstaller documentation
-2. Review macOS app development guidelines
-3. Test on clean macOS installations
-4. Verify all dependencies are included
+**Note**: This packaging process creates standalone applications that include all dependencies. Users don't need to install Python or any additional packages to run the app.

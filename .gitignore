@@ -61,3 +61,8 @@ dist/
 assets/icon_pngs/
 assets/icon.iconset/
 install_pdf_reader.sh
+create_icon.py
+create_llm_icon.py
+create_installer.py
+create_simple_dmg.sh
+build_mac_app.py
