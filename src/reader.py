@@ -322,7 +322,7 @@ class MainWindow(QMainWindow):
     
     def setup_ui(self):
         """Setup the main UI"""
-        self.setWindowTitle("Cross-Platform PDF Reader")
+        self.setWindowTitle("LLM PDF Reader")
         self.setGeometry(100, 100, 1400, 900)
         
         # Central widget
@@ -420,16 +420,54 @@ class MainWindow(QMainWindow):
         control_widget = QWidget()
         control_layout = QVBoxLayout(control_widget)
         
+        # API Key Configuration
+        api_section = QLabel("API Configuration:")
+        api_section.setFont(QFont("Arial", 12, QFont.Bold))
+        control_layout.addWidget(api_section)
+        
+        # API Key input
+        api_layout = QHBoxLayout()
+        api_layout.addWidget(QLabel("Perplexity API Key:"))
+        self.api_key_input = QLineEdit()
+        self.api_key_input.setEchoMode(QLineEdit.Password)  # Hide the key
+        self.api_key_input.setPlaceholderText("Enter your Perplexity API key")
+        api_layout.addWidget(self.api_key_input)
+        
+        # Load existing key if available
+        if self.api_keys.get('perplexity_api_key'):
+            self.api_key_input.setText(self.api_keys['perplexity_api_key'])
+        
+        # Save button
+        self.save_api_key_btn = QPushButton("Save")
+        self.save_api_key_btn.setFixedWidth(60)
+        api_layout.addWidget(self.save_api_key_btn)
+        control_layout.addLayout(api_layout)
+        
+        # API status
+        self.api_status_label = QLabel("API Key: Not configured")
+        self.api_status_label.setStyleSheet("color: red;")
+        control_layout.addWidget(self.api_status_label)
+        
+        # Update API status
+        self.update_api_status()
+        
         # Instructions
         instructions = QLabel("Instructions:")
         instructions.setFont(QFont("Arial", 12, QFont.Bold))
         control_layout.addWidget(instructions)
         
         instruction_text = QLabel(
-            "1. Open a PDF file\n"
-            "2. Drag to select text region\n"
-            "3. Click 'Extract Text' to get content\n"
-            "4. Ask questions about the selected text\n\n"
+            "1. Enter your Perplexity API key above\n"
+            "2. Open a PDF file\n"
+            "3. Select context window (±0, ±1, ±2, or ±5 pages)\n"
+            "4. Drag to select text region\n"
+            "5. Click 'Extract Text' to get content with context\n"
+            "6. Ask questions about the selected text\n\n"
+            "Context Window: Controls how many pages around current page to include\n"
+            "- ±0 pages: Only selected region\n"
+            "- ±1 page: Selected region + 1 page before/after\n"
+            "- ±2 pages: Selected region + 2 pages before/after\n"
+            "- ±5 pages: Selected region + 5 pages before/after\n\n"
             "Zoom: Use Ctrl+MouseWheel or toolbar buttons\n"
             "- 'Fit' = Automatically fits PDF to panel\n"
             "- Zoom percentages are relative to fit-to-panel size\n"
@@ -502,6 +540,18 @@ class MainWindow(QMainWindow):
         self.answer_length_combo.setCurrentText("Medium (250-500 tokens)")
         control_layout.addWidget(self.answer_length_combo)
         
+        # Context window
+        control_layout.addWidget(QLabel("Context window:"))
+        self.context_window_combo = QComboBox()
+        self.context_window_combo.addItems([
+            "±0 pages (selected only)",
+            "±1 page", 
+            "±2 pages",
+            "±5 pages"
+        ])
+        self.context_window_combo.setCurrentText("±0 pages (selected only)")
+        control_layout.addWidget(self.context_window_combo)
+        
         # Ask selected question
         self.ask_selected_btn = QPushButton("Ask Selected Question")
         control_layout.addWidget(self.ask_selected_btn)
@@ -543,6 +593,9 @@ class MainWindow(QMainWindow):
         self.clear_selection_btn.clicked.connect(self.clear_selection)
         self.extract_text_btn.clicked.connect(self.extract_selected_text)
         
+        # API key management
+        self.save_api_key_btn.clicked.connect(self.save_api_key)
+        
         # LLM operations
         self.ask_btn.clicked.connect(self.ask_question)
         self.generate_questions_btn.clicked.connect(self.generate_questions)
@@ -557,6 +610,58 @@ class MainWindow(QMainWindow):
         # Panel shortcuts
         self.wider_btn.setShortcut("Ctrl+Right")
         self.narrower_btn.setShortcut("Ctrl+Left")
+    
+    def update_api_status(self):
+        """Update the API status label"""
+        api_key = self.api_keys.get('perplexity_api_key')
+        if api_key and len(api_key) > 10:  # Basic validation
+            self.api_status_label.setText("API Key: ✓ Configured")
+            self.api_status_label.setStyleSheet("color: green;")
+        else:
+            self.api_status_label.setText("API Key: Not configured")
+            self.api_status_label.setStyleSheet("color: red;")
+    
+    def save_api_key(self):
+        """Save the API key from the input field"""
+        api_key = self.api_key_input.text().strip()
+        
+        if not api_key:
+            QMessageBox.warning(self, "Error", "Please enter a Perplexity API key.")
+            return
+        
+        if len(api_key) < 10:
+            QMessageBox.warning(self, "Error", "API key appears to be too short. Please check your key.")
+            return
+        
+        try:
+            # Update the API keys dictionary
+            self.api_keys['perplexity_api_key'] = api_key
+            
+            # Save to secrets.json file
+            import json
+            secrets_path = os.path.join(os.path.dirname(__file__), '..', 'secrets.json')
+            
+            # Create the secrets.json file if it doesn't exist
+            with open(secrets_path, 'w') as f:
+                json.dump(self.api_keys, f, indent=2)
+            
+            # Update the status
+            self.update_api_status()
+            
+            QMessageBox.information(self, "Success", "API key saved successfully!")
+            
+        except Exception as e:
+            QMessageBox.critical(self, "Error", f"Failed to save API key: {str(e)}")
+    
+    def get_api_key(self):
+        """Get the current API key, checking both the input field and saved keys"""
+        # First check the input field (in case user just entered it)
+        input_key = self.api_key_input.text().strip()
+        if input_key and len(input_key) > 10:
+            return input_key
+        
+        # Then check the saved API keys
+        return self.api_keys.get('perplexity_api_key')
     
     def open_pdf(self):
         """Open PDF file"""
@@ -766,33 +871,63 @@ class MainWindow(QMainWindow):
             return
         
         try:
+            # Get context window setting
+            context_window = self.context_window_combo.currentText()
+            
+            # Parse the context window setting
+            if "±0" in context_window:
+                pages_around = 0
+            else:
+                # Extract number from "±1 page", "±2 pages", etc.
+                pages_around = int(context_window.split('±')[1].split()[0])
+            
             # Get the current page
-            page = self.renderer.pdf_doc[self.renderer.current_page]
+            current_page_num = self.renderer.current_page
+            total_pages = len(self.renderer.pdf_doc)
             
-            # Convert screen coordinates to PDF coordinates
-            # We need to account for the current zoom and fit-to-panel scaling
-            scale_factor = self.renderer.fit_to_panel_zoom * self.renderer.zoom_level
+            # Calculate page range based on context window
+            start_page = max(0, current_page_num - pages_around)
+            end_page = min(total_pages - 1, current_page_num + pages_around)
             
-            # Get scroll area offsets
-            scroll_x = self.pdf_viewer.scroll_area.horizontalScrollBar().value()
-            scroll_y = self.pdf_viewer.scroll_area.verticalScrollBar().value()
+            extracted_text_parts = []
             
-            # Convert screen coordinates to PDF coordinates (accounting for scroll position)
-            # The selection coordinates are relative to the PDF viewer widget, so we need to add scroll offsets
-            pdf_x1 = (min(self.selection_start.x(), self.selection_end.x()) + scroll_x) / scale_factor
-            pdf_y1 = (min(self.selection_start.y(), self.selection_end.y()) + scroll_y) / scale_factor
-            pdf_x2 = (max(self.selection_start.x(), self.selection_end.x()) + scroll_x) / scale_factor
-            pdf_y2 = (max(self.selection_start.y(), self.selection_end.y()) + scroll_y) / scale_factor
+            for page_num in range(start_page, end_page + 1):
+                page = self.renderer.pdf_doc[page_num]
+                
+                if page_num == current_page_num:
+                    # For the current page, extract from selected region
+                    # Convert screen coordinates to PDF coordinates
+                    scale_factor = self.renderer.fit_to_panel_zoom * self.renderer.zoom_level
+                    
+                    # Get scroll area offsets
+                    scroll_x = self.pdf_viewer.scroll_area.horizontalScrollBar().value()
+                    scroll_y = self.pdf_viewer.scroll_area.verticalScrollBar().value()
+                    
+                    # Convert screen coordinates to PDF coordinates
+                    pdf_x1 = (min(self.selection_start.x(), self.selection_end.x()) + scroll_x) / scale_factor
+                    pdf_y1 = (min(self.selection_start.y(), self.selection_end.y()) + scroll_y) / scale_factor
+                    pdf_x2 = (max(self.selection_start.x(), self.selection_end.x()) + scroll_x) / scale_factor
+                    pdf_y2 = (max(self.selection_start.y(), self.selection_end.y()) + scroll_y) / scale_factor
+                    
+                    # Create a rectangle for text extraction
+                    rect = fitz.Rect(pdf_x1, pdf_y1, pdf_x2, pdf_y2)
+                    
+                    # Extract text from the selected region
+                    page_text = page.get_text("text", clip=rect)
+                    
+                    if page_text.strip():
+                        extracted_text_parts.append(page_text.strip())
+                else:
+                    # For other pages, extract all text
+                    page_text = page.get_text("text")
+                    if page_text.strip():
+                        extracted_text_parts.append(page_text.strip())
             
-            # Create a rectangle for text extraction
-            rect = fitz.Rect(pdf_x1, pdf_y1, pdf_x2, pdf_y2)
-            
-            # Extract text from the selected region
-            extracted_text = page.get_text("text", clip=rect)
-            
-            if extracted_text.strip():
-                self.extracted_text.setText(extracted_text.strip())
-                self.status_label.setText(f"Text extracted: {len(extracted_text.strip())} characters")
+            # Combine all extracted text
+            if extracted_text_parts:
+                full_text = "\n\n".join(extracted_text_parts)
+                self.extracted_text.setText(full_text)
+                self.status_label.setText(f"Text extracted from {len(extracted_text_parts)} page(s): {len(full_text)} characters")
             else:
                 self.extracted_text.setText("No text found in the selected region.")
                 self.status_label.setText("No text found in selection")
@@ -816,9 +951,9 @@ class MainWindow(QMainWindow):
         
         try:
             # Check if API key is available
-            api_key = self.api_keys.get('perplexity_api_key')
+            api_key = self.get_api_key()
             if not api_key:
-                self.llm_response.setText("Error: Perplexity API key not found. Please check your secrets.json file.")
+                self.response_text.setText("Error: Perplexity API key not configured. Please enter your API key in the configuration section.")
                 self.status_label.setText("API key missing")
                 return
             
@@ -866,9 +1001,9 @@ Please provide a clear and accurate answer based only on the information in the 
         
         try:
             # Check if API key is available
-            api_key = self.api_keys.get('perplexity_api_key')
+            api_key = self.get_api_key()
             if not api_key:
-                QMessageBox.warning(self, "Error", "Perplexity API key not found. Please check your secrets.json file.")
+                QMessageBox.warning(self, "Error", "Perplexity API key not configured. Please enter your API key in the configuration section.")
                 self.status_label.setText("API key missing")
                 return
             
@@ -965,9 +1100,9 @@ Questions:"""
         
         try:
             # Check if API key is available
-            api_key = self.api_keys.get('perplexity_api_key')
+            api_key = self.get_api_key()
             if not api_key:
-                self.response_text.setText("Error: Perplexity API key not found. Please check your secrets.json file.")
+                self.response_text.setText("Error: Perplexity API key not configured. Please enter your API key in the configuration section.")
                 self.status_label.setText("API key missing")
                 return
             
