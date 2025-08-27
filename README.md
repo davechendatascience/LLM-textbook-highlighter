@@ -5,7 +5,7 @@ A modern, intelligent PDF reader powered by Perplexity AI. Features cross-platfo
 ## 🚀 Quick Start
 
 ### Install from Package (Recommended)
-Download the latest installer from the [GitHub Releases](https://github.com/yourusername/LLM-textbook-highlighter/releases):
+Download the latest installer from the [GitHub Releases](https://github.com/davechendatascience/LLM-textbook-highlighter/releases):
 - **macOS**: `LLM-PDF-Reader-Installer.dmg` (~70MB) - Professional drag & drop installation
 - **All Platforms**: `LLM-PDF-Reader-Installer.zip` (~65MB) - Extract and run
 
@@ -131,13 +131,13 @@ The system supports mathematical notation through PyMuPDF text extraction:
 ## 📦 Package Installation
 
 ### macOS Users
-1. Download `LLM-PDF-Reader-Installer.dmg` from [GitHub Releases](https://github.com/yourusername/LLM-textbook-highlighter/releases)
+1. Download `LLM-PDF-Reader-Installer.dmg` from [GitHub Releases](https://github.com/davechendatascience/LLM-textbook-highlighter/releases)
 2. Double-click to mount the DMG
 3. Drag "LLM PDF Reader.app" to your Applications folder
 4. Launch from Applications or Spotlight
 
 ### All Platforms
-1. Download `LLM-PDF-Reader-Installer.zip` from [GitHub Releases](https://github.com/yourusername/LLM-textbook-highlighter/releases)
+1. Download `LLM-PDF-Reader-Installer.zip` from [GitHub Releases](https://github.com/davechendatascience/LLM-textbook-highlighter/releases)
 2. Extract the ZIP file
 3. Run the application directly
 
