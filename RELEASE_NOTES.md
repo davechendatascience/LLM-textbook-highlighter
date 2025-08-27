@@ -1,99 +1,176 @@
-# Release Notes v2.0.0 - Google GenAI Integration
+# Release Notes
 
-## 🚀 Major Release: Complete Refactoring & Modern SDK Integration
+## [v1.0] - 2025-08-27
 
-This release represents a complete architectural overhaul of the LLM Textbook Highlighter, introducing modern Google GenAI SDK integration, enhanced mathematical symbol processing, and a restructured codebase for better maintainability.
+### 🎉 Initial Release
 
-## 🎯 Key Highlights
+LLM PDF Reader v1.0 is the first stable release of our AI-powered PDF reading application. This release provides a complete, production-ready solution for extracting text from PDFs and asking questions using the Perplexity API.
 
-### ✨ Google GenAI SDK Integration
-- **Migrated to `google-genai`** - Modern, lighter-weight SDK with cleaner API
-- **Enhanced web search** - Improved grounding capabilities with `Tool(google_search={})`
-- **Better error handling** - More robust API interaction with proper exception management
-- **Cost optimization** - Web search disabled by default to reduce API costs by ~80%
+### ✨ Key Features
 
-### 🔧 Mathematical Symbol Processing
-- **Advanced symbol corruption recovery** - Fixes common PDF extraction artifacts (`�P` → `≠`)
-- **Comprehensive Unicode support** - Proper handling of Greek letters (α, β, γ, δ, Σ, Ω)
-- **Context-aware replacements** - Intelligent reconstruction of mathematical expressions
-- **Multi-method extraction** - 6 different PyMuPDF approaches with auto-selection
+#### Core Functionality
+- **PDF Text Extraction**: Extract text from selected regions with multiple PyMuPDF extraction methods
+- **LLM Integration**: Ask questions about extracted text using Perplexity API
+- **Visual PDF Navigation**: Page selector and zoom controls (25% to 400%)
+- **Interactive Text Selection**: Click-and-drag text selection with visual feedback
+- **Smart Question Generation**: AI-powered question suggestions based on extracted content
 
-### 🏗️ Code Architecture Improvements
-- **Modular structure** - Clean separation with `src/`, `extraction_methods/`, `utils/`
-- **Centralized configuration** - Single source of truth in `src/config.py`
-- **Unified PDF processing** - `PDFProcessor` class consolidates all extraction methods
-- **Enhanced testing** - Comprehensive validation suite with multiple test scenarios
+#### Enhanced Text Display
+- **Markdown Rendering**: Rich text formatting with support for bold, italic, headers, lists, and code blocks
+- **LaTeX Support**: Mathematical expressions and symbols rendered properly
+- **Font Size Control**: Adjustable text size for better readability
+- **Clickable Hyperlinks**: URLs in responses are automatically converted to clickable links
 
-## 📋 What's New
+#### User Experience
+- **Intuitive Interface**: Clean, modern UI with easy-to-use controls
+- **Real-time Feedback**: Status updates and progress indicators
+- **Error Handling**: Comprehensive error messages and fallback options
+- **Resizable Panels**: Drag dividers for custom layout
+- **Keyboard Shortcuts**: Panel sizing with Ctrl+Left/Right
 
-### New Entry Points
-```bash
-# Interactive GUI (recommended)
-python run_interactive.py
+### 🔧 Technical Features
 
-# Batch processing
-python main.py
+#### LLM Integration
+- **Smart Model Selection**: Uses `sonar` for questions, `sonar-reasoning` for complex answers
+- **Response Cleaning**: Automatically removes `<think>` tags from LLM responses
+- **Cost Optimization**: Chooses appropriate models based on answer length
+- **Error Handling**: Clear feedback for missing or invalid API keys
 
-# API testing
-python test_google_genai.py
-```
+#### Text Extraction
+- **Multi-Method Extraction**: 6 different PyMuPDF approaches with auto-selection
+- **Fast and Reliable**: Uses PyMuPDF for consistent text extraction
+- **Visual Selection**: Red selection box shows exactly what will be extracted
+- **Cross-platform**: Consistent behavior on Windows, macOS, and Linux
 
-### Enhanced Features
-- **Smart text extraction** with automatic method selection
-- **Mathematical notation preservation** for LaTeX-rendered content
-- **Flexible API configuration** with cost optimization settings
-- **Improved error handling** and debugging capabilities
+#### Performance
+- **Optimized Rendering**: Efficient PDF display with smooth scrolling
+- **Memory Management**: Proper cleanup of resources
+- **Fast Startup**: Quick application launch and PDF loading
 
-### Testing & Validation
-- **`test_restructured.py`** - Core module integration
-- **`test_google_genai.py`** - API functionality with/without web search
-- **`test_interactive_launch.py`** - GUI and text extraction validation
+### 📱 Platform Support
 
-## 🐛 Fixes
-- ✅ Fixed missing `extract_text_by_intersection` method reference
-- ✅ Resolved Unicode encoding issues in Windows console output
-- ✅ Corrected import paths in restructured codebase
-- ✅ Fixed PDF coordinate conversion for text selection
+#### macOS
+- **Native App Bundle**: Standalone `.app` bundle with all dependencies
+- **DMG Installer**: Professional drag-and-drop installation
+- **ZIP Installer**: Alternative distribution method
+- **Universal Binary**: Supports both Intel and Apple Silicon Macs
 
-## 📦 Installation & Migration
+#### System Requirements
+- **macOS**: 10.15 (Catalina) and later
+- **Python**: 3.11+ (bundled in app)
+- **Memory**: 4GB RAM recommended
+- **Storage**: 100MB for application, additional space for PDFs
 
-### New Installation
-```bash
-pip install -r requirements.txt
-python test_restructured.py  # Validate setup
-```
+### 🚀 Installation
 
-### Migration from v1.x
-1. **Dependencies**: Will automatically install `google-genai` (replaces `google-generativeai`)
-2. **API keys**: Keep same `secrets.json` format
-3. **Usage**: Use new entry points (`run_interactive.py`)
-4. **Testing**: Run validation scripts to confirm setup
+#### Quick Start
+1. Download the appropriate installer for your system
+2. Follow the installation instructions
+3. Configure your Perplexity API key
+4. Start reading PDFs with AI assistance
 
-## 💰 Cost Optimization
+#### API Configuration
+- **Perplexity API Key**: Required for LLM functionality
+- **Easy Setup**: Built-in configuration panel
+- **Secure Storage**: API key stored locally
 
-| API Configuration | Cost per Query | Recommended Use |
-|------------------|----------------|-----------------|
-| Gemini 2.0 Flash | ~$0.0075 | Default (best value) |
-| Gemini + Web Search | $0.035 | Research queries |
-| Perplexity + Search | $0.005 | Alternative with search |
-| Perplexity Basic | $0.001 | Budget option |
+### 📋 Usage Guide
 
-## 🔄 Breaking Changes
+#### Basic Workflow
+1. **Open PDF**: Use File → Open or drag and drop
+2. **Select Text**: Click and drag to select text regions
+3. **Extract Text**: Click "Extract Text" to get selected content
+4. **Ask Questions**: Type questions or use generated suggestions
+5. **Get Answers**: Receive AI-powered responses with citations
 
-⚠️ **Important**: This is a major version with breaking changes:
+#### Advanced Features
+- **Context Window**: Extract additional pages as background context (±0 to ±5 pages)
+- **Language Detection**: Automatic language detection for multilingual responses
+- **Question Generation**: AI-powered question suggestions
+- **Citation Links**: Clickable reference links in responses
 
-- **Package dependency** changed from `google-generativeai` to `google-genai`
-- **File structure** completely reorganized
-- **Some internal method names** changed for consistency
-- **Configuration system** centralized (affects custom integrations)
+### 🔍 What's New in v1.0
 
-## 🎉 Ready to Use
+#### Initial Release Features
+- Complete PDF reading and text extraction functionality
+- Full LLM integration with Perplexity API
+- Rich text rendering with markdown and LaTeX support
+- Professional macOS installer packages
+- Comprehensive error handling and user feedback
+- Multi-language support framework
 
-The system is fully operational and tested with:
-- ✅ All core functionality preserved
-- ✅ Enhanced mathematical symbol support
-- ✅ Modern SDK integration
-- ✅ Comprehensive test coverage
-- ✅ Updated documentation
+#### Documentation
+- Complete README with installation and usage instructions
+- Comprehensive packaging guide for developers
+- API configuration documentation
+- Troubleshooting guide
 
-**Start here**: `python run_interactive.py`
+### 🐛 Known Issues
+
+#### Limitations
+- **PDF Compatibility**: Some complex PDFs may have extraction issues
+- **Large Files**: Very large PDFs (>100MB) may load slowly
+- **Network Dependency**: Requires internet connection for LLM features
+- **API Limits**: Subject to Perplexity API rate limits
+
+#### Platform Specific
+- **macOS Only**: This release is optimized for macOS
+- **Permission Issues**: May require manual quarantine attribute removal on first run
+
+### 🔮 Future Roadmap
+
+#### Planned Features
+- **Vector Store Integration**: Store and search across entire PDF libraries
+- **Cross-platform Support**: Windows and Linux versions
+- **Advanced AI Features**: Document summarization and analysis
+- **Cloud Integration**: Sync settings and preferences across devices
+- **Plugin System**: Extensible architecture for custom features
+
+#### Technical Improvements
+- **Performance Optimization**: Faster text extraction and rendering
+- **Memory Efficiency**: Reduced memory footprint
+- **Offline Mode**: Basic functionality without internet connection
+- **Advanced Search**: Full-text search across multiple documents
+
+### 📊 File Information
+
+#### Installer Sizes
+- **App Bundle**: ~60-80 MB
+- **DMG Installer**: ~70 MB
+- **ZIP Installer**: ~65 MB
+
+#### Dependencies
+- **PySide6**: Qt-based GUI framework
+- **PyMuPDF**: PDF processing and text extraction
+- **Pillow**: Image processing and manipulation
+- **Requests**: HTTP client for API communication
+- **NumPy**: Numerical computing (optimized version)
+
+### 🙏 Acknowledgments
+
+#### Open Source Libraries
+- **PyMuPDF**: PDF processing capabilities
+- **PySide6**: Cross-platform GUI framework
+- **Perplexity API**: LLM integration and responses
+- **Python Community**: Rich ecosystem of libraries and tools
+
+#### Contributors
+- Development team for the initial implementation
+- Beta testers for feedback and bug reports
+- Open source community for inspiration and tools
+
+### 📞 Support
+
+#### Getting Help
+- **Documentation**: Check README.md and PACKAGING.md
+- **Issues**: Report bugs on GitHub Issues
+- **Discussions**: Join community discussions on GitHub
+
+#### Troubleshooting
+- **Installation Issues**: See PACKAGING.md for detailed instructions
+- **API Problems**: Verify Perplexity API key and internet connection
+- **Performance**: Check system requirements and available memory
+
+---
+
+**Note**: This is the initial release of LLM PDF Reader. We welcome feedback and suggestions for future improvements. The application is designed to be user-friendly while providing powerful AI-assisted PDF reading capabilities.

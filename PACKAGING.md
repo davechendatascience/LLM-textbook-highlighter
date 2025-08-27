@@ -1,92 +1,95 @@
 # LLM PDF Reader - Packaging Guide
 
-This guide explains how to build and package the LLM PDF Reader application for distribution.
+This guide explains how to build and package the LLM PDF Reader application for distribution using our unified build script.
 
 ## Prerequisites
 
 ### Required Tools
 - Python 3.11+ with virtual environment
-- PyInstaller (installed automatically)
 - macOS (for building macOS apps)
+- create-dmg (optional, for DMG creation): `brew install create-dmg`
 
 ### Dependencies
-All dependencies are managed in the virtual environment:
+All dependencies are managed automatically by the build script:
 ```bash
 source .venv/bin/activate
-pip install -r requirements.txt
 ```
 
 ## Quick Build
 
-### 1. Activate Virtual Environment
+### Single Command Build
 ```bash
+# Activate virtual environment
 source .venv/bin/activate
+
+# Build everything (DMG + ZIP)
+python build_mac_installer.py
+
+# Or just ZIP installer
+python build_mac_installer.py --no-dmg
+
+# Or just DMG installer
+python build_mac_installer.py --no-zip
+
+# Clean build directories only
+python build_mac_installer.py --clean
 ```
 
-### 2. Build the App
-```bash
-python build_mac_app.py
-```
-Choose option 2 for `.app bundle` when prompted.
+### Build Options
+- `--no-dmg`: Skip DMG creation (useful if create-dmg is not installed)
+- `--no-zip`: Skip ZIP creation
+- `--pkg`: Create PKG installer (requires installer/ directory with plist files)
+- `--clean`: Clean build directories only
 
-### 3. Create Installers
-```bash
-# Create DMG installer
-bash create_simple_dmg.sh
+## What the Build Script Does
 
-# Create ZIP installer
-cd dist && zip -r "../LLM-PDF-Reader-Installer.zip" "LLM PDF Reader.app" && cd ..
-```
+### 1. Prerequisites Check
+- ✅ Verifies Python 3.11+
+- ✅ Confirms macOS platform
+- ✅ Checks for create-dmg (optional)
 
-## Manual Build Process
+### 2. Dependency Management
+- 📦 Installs PyInstaller automatically
+- 🔧 Fixes NumPy compatibility issues
+- 📋 Installs all required packages with correct versions
 
-### Step 1: Clean Previous Builds
-```bash
-rm -rf build dist
-```
+### 3. Build Process
+- 🧹 Cleans previous build artifacts
+- 📝 Creates optimized PyInstaller spec file
+- 🔨 Builds the application bundle
+- 🛡️ Removes quarantine attributes
 
-### Step 2: Build with PyInstaller
-```bash
-pyinstaller --onefile --windowed \
-  --name="LLM PDF Reader" \
-  --icon=assets/icon.icns \
-  --add-data=src:src \
-  --hidden-import=PySide6.QtCore \
-  --hidden-import=PySide6.QtGui \
-  --hidden-import=PySide6.QtWidgets \
-  --hidden-import=fitz \
-  --hidden-import=PIL \
-  --hidden-import=requests \
-  run_reader.py
-```
+### 4. Installer Creation
+- 💾 DMG installer (if create-dmg is available)
+- 📦 ZIP installer (always created)
+- 📋 PKG installer (if --pkg flag is used)
 
-### Step 3: Test the App
-```bash
-./dist/LLM\ PDF\ Reader
-```
+## Generated Files
 
-### Step 4: Create Installers
+### App Bundle
+- `dist/LLM PDF Reader.app` - Complete macOS application bundle
+- Size: ~60-80 MB
+- Contains all dependencies and resources
 
-#### DMG Installer (Recommended)
-```bash
-bash create_simple_dmg.sh
-```
-
-#### ZIP Installer
-```bash
-cd dist && zip -r "../LLM-PDF-Reader-Installer.zip" "LLM PDF Reader.app" && cd ..
-```
+### Installers
+- `LLM-PDF-Reader-Installer.dmg` - DMG installer (~70 MB)
+- `LLM-PDF-Reader-Installer.zip` - ZIP installer (~65 MB)
+- `LLM-PDF-Reader-Installer.pkg` - PKG installer (~70 MB, optional)
 
 ## File Structure
 
-### Generated Files
-- `dist/LLM PDF Reader` - Single executable
-- `dist/LLM PDF Reader.app` - macOS app bundle
-- `LLM-PDF-Reader-Installer.dmg` - DMG installer (62MB)
-- `LLM-PDF-Reader-Installer.zip` - ZIP installer (119MB)
+### App Bundle Contents
+```
+LLM PDF Reader.app/
+├── Contents/
+│   ├── Info.plist          # App metadata
+│   ├── MacOS/              # Executable
+│   ├── Resources/          # App resources
+│   └── Frameworks/         # Dependencies
+└── src/                    # Source code
+```
 
 ### Key Components
-- **App Bundle**: Contains all dependencies and resources
 - **Icon**: `assets/icon.icns` - Application icon
 - **Source Code**: `src/` directory bundled with the app
 - **Dependencies**: PySide6, PyMuPDF, Pillow, requests, etc.
@@ -99,112 +102,75 @@ cd dist && zip -r "../LLM-PDF-Reader-Installer.zip" "LLM PDF Reader.app" && cd .
 **Solution**: Ensure virtual environment is activated
 ```bash
 source .venv/bin/activate
+python build_mac_installer.py
 ```
 
-#### 2. App crashes on launch
-**Solution**: Check if all dependencies are installed
+#### 2. "create-dmg not found"
+**Solution**: Install create-dmg or skip DMG creation
 ```bash
-pip install -r requirements.txt
+# Install create-dmg
+brew install create-dmg
+
+# Or skip DMG creation
+python build_mac_installer.py --no-dmg
 ```
 
-#### 3. Build fails with symlink errors
-**Solution**: Use `--onefile` mode instead of `--onedir`
+#### 3. "Permission denied" errors
+**Solution**: Remove quarantine attributes manually
 ```bash
-pyinstaller --onefile --windowed ...
+xattr -cr "dist/LLM PDF Reader.app"
 ```
 
-#### 4. App opens and closes immediately
-**Solution**: Run from terminal to see error messages
+#### 4. Build fails with NumPy errors
+**Solution**: The script automatically handles this, but you can manually fix:
 ```bash
-./dist/LLM\ PDF\ Reader
+pip install "numpy<2.0.0"
 ```
 
-### Build Verification
+### Build Failures
 
-#### Test the App
+#### PyInstaller Issues
+- Clean build directories: `python build_mac_installer.py --clean`
+- Check Python version: Must be 3.11+
+- Verify virtual environment is activated
+
+#### DMG Creation Issues
+- Install create-dmg: `brew install create-dmg`
+- Or use ZIP only: `python build_mac_installer.py --no-dmg`
+
+## Advanced Usage
+
+### Custom Build Configuration
+The build script uses a comprehensive PyInstaller spec file that includes:
+- All necessary hidden imports
+- Proper data file inclusion
+- Optimized exclusions
+- macOS-specific settings
+
+### PKG Installer (Advanced)
+To create PKG installers, you need:
+1. `installer/component.plist` - Component definition
+2. `installer/distribution.xml` - Distribution configuration
+
+Then run:
 ```bash
-# Test executable
-./dist/LLM\ PDF\ Reader
-
-# Test app bundle
-open "dist/LLM PDF Reader.app"
+python build_mac_installer.py --pkg
 ```
-
-#### Check File Sizes
-- Executable: ~64MB
-- App Bundle: ~64MB
-- DMG Installer: ~62MB
-- ZIP Installer: ~119MB
 
 ## Distribution
 
-### GitHub Release
-1. Upload both installers to GitHub release
-2. Update README.md with download links
-3. Tag the release with version number
+### Recommended Distribution Method
+1. **DMG Installer**: Best for end users (drag-and-drop installation)
+2. **ZIP Installer**: Good for developers and testing
+3. **PKG Installer**: For enterprise deployment
 
-### File Naming Convention
-- `LLM-PDF-Reader-Installer.dmg` - macOS DMG
-- `LLM-PDF-Reader-Installer.zip` - Cross-platform ZIP
-- Version format: `v1.0.0`, `v1.1.0`, etc.
+### File Sizes
+- App Bundle: ~60-80 MB
+- DMG Installer: ~70 MB
+- ZIP Installer: ~65 MB
+- PKG Installer: ~70 MB
 
-### Release Notes Template
-```markdown
-## LLM PDF Reader v1.0.0
-
-### Features
-- Cross-platform PDF reading
-- AI-powered question generation
-- Interactive text selection
-- Built-in API configuration
-
-### Downloads
-- **macOS**: [LLM-PDF-Reader-Installer.dmg](link)
-- **All Platforms**: [LLM-PDF-Reader-Installer.zip](link)
-
-### Installation
-1. Download the appropriate installer
-2. Follow the installation instructions
-3. Configure your Perplexity API key
-4. Start reading PDFs with AI assistance
-```
-
-## Advanced Configuration
-
-### Custom Icon
-```bash
-# Generate new icon
-python create_llm_icon.py
-
-# Use custom icon in build
-pyinstaller --icon=assets/custom_icon.icns ...
-```
-
-### Code Signing (Optional)
-```bash
-# Sign the app (requires Apple Developer account)
-codesign --force --deep --sign "Developer ID Application: Your Name" "dist/LLM PDF Reader.app"
-```
-
-### Notarization (Optional)
-```bash
-# Notarize for distribution outside App Store
-xcrun altool --notarize-app --primary-bundle-id "com.llmpdfreader.app" --username "your-apple-id" --password "app-specific-password" --file "LLM-PDF-Reader-Installer.dmg"
-```
-
-## Maintenance
-
-### Regular Tasks
-1. Update dependencies: `pip install -r requirements.txt --upgrade`
-2. Test build process after dependency updates
-3. Update version numbers in release notes
-4. Clean old builds: `rm -rf build dist *.dmg *.zip`
-
-### Version Management
-- Update version in `run_reader.py` if needed
-- Tag releases with semantic versioning
-- Keep changelog updated
-
----
-
-**Note**: This packaging process creates standalone applications that include all dependencies. Users don't need to install Python or any additional packages to run the app.
+### Compatibility
+- **macOS**: 10.15 (Catalina) and later
+- **Architecture**: Universal (Intel + Apple Silicon)
+- **Python**: 3.11+ (bundled in app)
