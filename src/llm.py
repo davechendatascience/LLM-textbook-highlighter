@@ -20,4 +20,6 @@ def send_prompt_to_perplexity(prompt, api_key, model="sonar-reasoning", search_e
     except requests.exceptions.HTTPError as err:
         print("API Error:", response.text)
         raise err
-    return response.json()['choices'][0]['message']['content']
+    result = response.json()
+    # Return the full response object to access citations
+    return result

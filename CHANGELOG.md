@@ -1,5 +1,45 @@
 # Changelog
 
+## [Unreleased]
+
+### Enhanced Text Display
+- **Automatic Citations**: References are now automatically displayed as clickable links in the response
+- **Context Window Logic**: Fixed context window to properly separate selected text from background context
+- **Improved Link Processing**: Enhanced markdown link rendering with proper HTML generation
+- **Better URL Handling**: Cleaned up URL processing to remove artifacts and ensure proper link functionality
+
+### Bug Fixes
+- **Fixed Context Window**: Selected text now always shows only the red box content, while context pages are used as background for LLM
+- **Fixed Citation Links**: URLs no longer have trailing `)` characters or extra `[` symbols
+- **Fixed Mouse Click Errors**: Resolved `AttributeError` with `anchorName()` vs `anchorNames()`
+- **Fixed Markdown Processing**: Improved order of operations to prevent link processing conflicts
+
+### Technical Improvements
+- **Cleaner Prompt Structure**: Enhanced LLM prompts to clearly distinguish between selected text and background context
+- **Better Debug Output**: Improved console logging for easier troubleshooting
+- **Simplified HTML Generation**: Removed inline styles in favor of CSS styling for better link rendering
+
+## [2.1.0] - 2025-08-26
+
+### ✨ New Features
+- **📚 Enhanced Text Display**: Complete markdown and LaTeX rendering system
+  - **Clickable Hyperlinks**: URLs automatically converted to clickable links in responses
+  - **Markdown Support**: Full rendering of **bold**, *italic*, `code`, headers, and lists
+  - **LaTeX Integration**: Mathematical expressions and symbols rendered properly
+  - **Rich Formatting**: Professional text display with proper typography
+  - **📖 Automatic Citations**: Perplexity API citations extracted and displayed as clickable links
+- **Enhanced User Experience**: Direct link access without separate windows or buttons
+- **🎨 Font Size Control**: Maintains font size changing feature with markdown rendering
+
+### 🔧 Technical Improvements
+- **MarkdownTextWidget**: Custom widget with markdown and LaTeX processing
+- **HTML Rendering**: Advanced text-to-HTML conversion with link support
+- **LaTeX Symbol Support**: Comprehensive mathematical notation rendering
+- **Link Integration**: Seamless browser opening from within response text
+- **Clean Interface**: Removed separate reference window for integrated experience
+
+---
+
 ## [2.0.0] - 2025-08-23
 
 ### 🚀 Major Refactoring: Google GenAI Integration & Code Restructuring

@@ -1,11 +1,19 @@
-# Build dependencies for Mac app packaging
-pyinstaller>=5.13.0
+# Build requirements for Mac app packaging
+# Fixed NumPy compatibility issues
 
-# Core application dependencies
-numpy
-pdfplumber
+# Core dependencies with specific versions
+numpy<2.0.0
+PySide6>=6.5.0
 PyMuPDF==1.23.8
 Pillow==10.0.1
 requests==2.31.0
-PySide6>=6.5.0
+pdfplumber
 fasttext-wheel
+
+# Build tools
+pyinstaller>=6.0.0
+
+# Exclude problematic packages that cause NumPy conflicts
+# pandas
+# pyarrow
+# rapidfuzz

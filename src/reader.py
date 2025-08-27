@@ -137,9 +137,19 @@ LANGUAGES = {
         "please_extract_some_text_first": "Please extract some text first.",
         "error_api_key_not_configured": "Error: Perplexity API key not configured. Please enter your API key in the configuration section.",
         "based_on_text_prompt": "Based on the following text, please answer this question:",
+        "references": "References",
+        "view_references": "View References",
+        "no_references_found": "No references found",
+        "click_to_open": "Click to open",
+        "reference_window_title": "Reference Links",
+        "close": "Close",
+        "open_all_references": "Open All References",
         "text": "Text",
         "question": "Question",
         "please_provide_clear_and_accurate_answer_based_only_on_information_in_text_above": "Please provide a clear and accurate answer based only on the information in the text above.",
+    "selected_text": "Selected Text",
+    "background_context": "Background Context",
+    "please_provide_clear_and_accurate_answer_based_primarily_on_selected_text_above_with_context_as_background": "Please provide a clear and accurate answer based primarily on the selected text above, using the background context for additional information when relevant.",
         "error_could_not_get_response_from_llm": "Error: Could not get response from LLM. ",
         "please_check_your_api_key": "Please check your API key.",
         "perplexity_api_key_not_configured": "Perplexity API key not configured. ",
@@ -265,9 +275,19 @@ LANGUAGES = {
         "please_extract_some_text_first": "請先提取一些文字。",
         "error_api_key_not_configured": "錯誤: Perplexity API 金鑰未配置。請在配置區段中輸入您的 API 金鑰。",
         "based_on_text_prompt": "根據以下文字，請回答這個問題:",
+        "references": "參考資料",
+        "view_references": "查看參考資料",
+        "no_references_found": "未找到參考資料",
+        "click_to_open": "點擊開啟",
+        "reference_window_title": "參考連結",
+        "close": "關閉",
+        "open_all_references": "開啟所有參考資料",
         "text": "文字",
         "question": "問題",
         "please_provide_clear_and_accurate_answer_based_only_on_information_in_text_above": "請僅根據上述文字中的資訊提供清楚且準確的答案。",
+        "selected_text": "選中文字",
+        "background_context": "背景上下文",
+        "please_provide_clear_and_accurate_answer_based_primarily_on_selected_text_above_with_context_as_background": "請主要根據上述選中的文字提供清楚且準確的答案，在相關時使用背景上下文作為額外資訊。",
         "error_could_not_get_response_from_llm": "錯誤: 無法從 LLM 取得回應。",
         "please_check_your_api_key": "請檢查您的 API 金鑰。",
         "perplexity_api_key_not_configured": "Perplexity API 金鑰未配置。",
@@ -353,7 +373,81 @@ LANGUAGES = {
         "language_selection": "语言选择",
         "select_language": "请选择您偏好的语言:",
         "ok": "确定",
-        "cancel": "取消"
+        "cancel": "取消",
+        "api_key_configured": "API 密钥: ✓ 已配置",
+        "error": "错误",
+        "please_enter_api_key": "请输入 Perplexity API 密钥。",
+        "api_key_too_short": "API 密钥似乎太短。请检查您的密钥。",
+        "success": "成功",
+        "api_key_saved": "API 密钥保存成功！",
+        "failed_to_save_api_key": "保存 API 密钥失败: ",
+        "open_pdf_dialog": "打开PDF",
+        "pdf_files": "PDF 文件",
+        "opened_pdf": "已打开 PDF: ",
+        "pages": "页",
+        "failed_to_open_pdf": "打开 PDF 文件失败。",
+        "invalid_page": "无效页面",
+        "page_number_out_of_range": "页码超出范围。",
+        "invalid_input": "无效输入",
+        "please_enter_valid_page_number": "请输入有效的页码。",
+        "zoom_fit_to_panel": "缩放: 适合面板",
+        "font_size_changed": "字体大小已更改为 ",
+        "pt": "pt",
+        "selected_question": "选中的问题: ",
+        "selection_completed": "选择完成。",
+        "click_extract_text_to_get_content": "点击「提取文本」以获取内容。",
+        "selection_cleared": "选择已清除",
+        "no_selection": "无选择",
+        "please_select_a_text_region_first": "请先选择文本区域。",
+        "no_pdf": "无PDF",
+        "please_open_a_pdf_first": "请先打开 PDF。",
+        "text_extracted": "已从 ",
+        "page(s)": " 页提取文本: ",
+        "characters": " 字符",
+        "no_text_found_in_selection": "在选中的区域中未找到文本。",
+        "error_extracting_text": "提取文本时发生错误: ",
+        "error_during_text_extraction": "文本提取期间发生错误",
+        "no_question": "无问题",
+        "please_enter_a_question": "请输入问题。",
+        "please_enter_a_question_or_select_from_dropdown": "请输入问题或从下拉菜单中选择一个。",
+        "no_text": "无文本",
+        "please_extract_some_text_first": "请先提取一些文本。",
+        "error_api_key_not_configured": "错误: Perplexity API 密钥未配置。请在配置部分中输入您的 API 密钥。",
+        "based_on_text_prompt": "根据以下文本，请回答这个问题:",
+        "references": "参考资料",
+        "view_references": "查看参考资料",
+        "no_references_found": "未找到参考资料",
+        "click_to_open": "点击打开",
+        "reference_window_title": "参考链接",
+        "close": "关闭",
+        "open_all_references": "打开所有参考资料",
+        "text": "文本",
+        "question": "问题",
+        "please_provide_clear_and_accurate_answer_based_only_on_information_in_text_above": "请仅根据上述文本中的信息提供清晰准确的答案。",
+        "selected_text": "选中文本",
+        "background_context": "背景上下文",
+        "please_provide_clear_and_accurate_answer_based_primarily_on_selected_text_above_with_context_as_background": "请主要根据上述选中的文本提供清晰准确的答案，在相关时使用背景上下文作为额外信息。",
+        "error_could_not_get_response_from_llm": "错误: 无法从 LLM 获取响应。",
+        "please_check_your_api_key": "请检查您的 API 密钥。",
+        "perplexity_api_key_not_configured": "Perplexity API 密钥未配置。",
+        "please_enter_your_api_key_in_the_configuration_section": "请在配置部分中输入您的 API 密钥。",
+        "based_on_text_generate_questions": "根据以下文本，生成恰好 5 个可以询问此内容的相关问题。",
+        "make_questions_diverse_and_interesting": "使问题多样化且有趣，涵盖文本的不同方面。",
+        "cover_different_aspects_of_the_text": "涵盖文本的不同方面。",
+        "instructions": "说明",
+        "generate_exactly_5_questions": "- 生成恰好 5 个问题",
+        "each_question_should_be_on_its_own_line": "- 每个问题应该在自己的行上",
+        "do_not_use_numbering": "- 不要使用编号 (1., 2., 等)",
+        "do_not_use_bullet_points": "- 不要使用项目符号 (-, •, *)",
+        "make_questions_clear_and_specific": "- 使问题清晰且具体",
+        "questions": "问题",
+        "could_not_generate_questions": "无法生成问题。",
+        "no_valid_questions_generated": "未生成有效问题",
+        "error_generating_questions": "生成问题时发生错误: ",
+        "please_select_a_question_from_the_dropdown": "请从下拉菜单中选择问题。",
+        "error_perplexity_api_key_not_configured": "错误: Perplexity API 密钥未配置。",
+        "based_on_text_please_answer_this_question": "根据以下文本，请回答这个问题:",
+        "please_provide_a_clear_and_accurate_answer_based_only_on_information_in_the_text_above": "请仅根据上述文本中的信息提供清晰准确的答案。"
     },
     "Japanese": {
         "window_title": "LLM PDF リーダー",
@@ -418,7 +512,20 @@ LANGUAGES = {
         "language_selection": "言語選択",
         "select_language": "お好みの言語を選択してください:",
         "ok": "OK",
-        "cancel": "キャンセル"
+        "cancel": "キャンセル",
+        "references": "参考文献",
+        "view_references": "参考文献を表示",
+        "no_references_found": "参考文献が見つかりません",
+        "click_to_open": "クリックして開く",
+        "reference_window_title": "参考リンク",
+        "close": "閉じる",
+        "open_all_references": "すべての参考文献を開く",
+        "text": "テキスト",
+        "question": "質問",
+        "selected_text": "選択されたテキスト",
+        "background_context": "背景コンテキスト",
+        "please_provide_clear_and_accurate_answer_based_only_on_information_in_text_above": "上記のテキストの情報のみに基づいて、明確で正確な回答を提供してください。",
+        "please_provide_clear_and_accurate_answer_based_primarily_on_selected_text_above_with_context_as_background": "主に上記の選択されたテキストに基づいて明確で正確な回答を提供し、関連する場合は背景コンテキストを追加情報として使用してください。"
     }
 }
 
@@ -493,6 +600,384 @@ class LanguageSelectionDialog(QWidget):
         CURRENT_LANGUAGE = "English"
         self.selected_language = "English"
         self.close()
+
+
+class MarkdownTextWidget(QTextEdit):
+    """Enhanced text widget with markdown and LaTeX support"""
+    
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.setup_markdown_support()
+    
+    def setup_markdown_support(self):
+        """Setup markdown rendering capabilities"""
+        # Enable rich text
+        self.setAcceptRichText(True)
+        
+        # Set up document for better text handling
+        self.document().setDefaultFont(QFont("Arial", 12))
+        
+        # Enable text interaction
+        self.setTextInteractionFlags(
+            Qt.TextSelectableByMouse | 
+            Qt.TextSelectableByKeyboard | 
+            Qt.LinksAccessibleByMouse | 
+            Qt.LinksAccessibleByKeyboard
+        )
+    
+    def set_markdown_text(self, text, font_size=12):
+        """Set text with markdown formatting and LaTeX support"""
+        if not text:
+            self.setPlainText("")
+            return
+        
+        try:
+            # Process LaTeX expressions
+            text = self.process_latex(text)
+            
+            # Convert markdown to HTML
+            html = self.markdown_to_html(text)
+            
+            # Debug: Print the generated HTML to see what's happening
+            print(f"Generated HTML preview: {html[:500]}...")
+            
+            # Also print any links found in the HTML
+            import re
+            links = re.findall(r'<a href="([^"]+)"', html)
+            if links:
+                print(f"Found links in HTML: {links}")
+            else:
+                print("No links found in HTML")
+            
+            # Set font size
+            self.document().setDefaultFont(QFont("Arial", font_size))
+            
+            # Add CSS styling for links
+            css_style = """
+            <style>
+            a {
+                color: #0066cc;
+                text-decoration: underline;
+            }
+            a:hover {
+                color: #004499;
+                text-decoration: none;
+            }
+            </style>
+            """
+            
+            # Wrap HTML with CSS styling
+            styled_html = f"{css_style}<div>{html}</div>"
+            
+            # Set the HTML content
+            self.setHtml(styled_html)
+        except Exception as e:
+            # Fallback to plain text if markdown processing fails
+            print(f"Markdown processing error: {e}")
+            self.setPlainText(text)
+            self.document().setDefaultFont(QFont("Arial", font_size))
+    
+    def process_latex(self, text):
+        """Process LaTeX expressions in the text"""
+        import re
+        
+        # Handle inline math: $...$ and \(...\)
+        text = re.sub(r'\$([^$]+)\$', r'<span style="font-family: \'Times New Roman\', serif; font-style: italic;">\1</span>', text)
+        text = re.sub(r'\\\(([^)]+)\\\)', r'<span style="font-family: \'Times New Roman\', serif; font-style: italic;">\1</span>', text)
+        
+        # Handle display math: $$...$$ and \[...\]
+        text = re.sub(r'\$\$([^$]+)\$\$', r'<div style="text-align: center; font-family: \'Times New Roman\', serif; font-style: italic; margin: 10px 0;">\1</div>', text)
+        text = re.sub(r'\\\[([^\]]+)\\\]', r'<div style="text-align: center; font-family: \'Times New Roman\', serif; font-style: italic; margin: 10px 0;">\1</div>', text)
+        
+        # Handle common LaTeX symbols
+        latex_replacements = [
+            (r'\\alpha', 'α'), (r'\\beta', 'β'), (r'\\gamma', 'γ'), (r'\\delta', 'δ'),
+            (r'\\epsilon', 'ε'), (r'\\zeta', 'ζ'), (r'\\eta', 'η'), (r'\\theta', 'θ'),
+            (r'\\iota', 'ι'), (r'\\kappa', 'κ'), (r'\\lambda', 'λ'), (r'\\mu', 'μ'),
+            (r'\\nu', 'ν'), (r'\\xi', 'ξ'), (r'\\pi', 'π'), (r'\\rho', 'ρ'),
+            (r'\\sigma', 'σ'), (r'\\tau', 'τ'), (r'\\upsilon', 'υ'), (r'\\phi', 'φ'),
+            (r'\\chi', 'χ'), (r'\\psi', 'ψ'), (r'\\omega', 'ω'),
+            (r'\\Alpha', 'Α'), (r'\\Beta', 'Β'), (r'\\Gamma', 'Γ'), (r'\\Delta', 'Δ'),
+            (r'\\Epsilon', 'Ε'), (r'\\Zeta', 'Ζ'), (r'\\Eta', 'Η'), (r'\\Theta', 'Θ'),
+            (r'\\Iota', 'Ι'), (r'\\Kappa', 'Κ'), (r'\\Lambda', 'Λ'), (r'\\Mu', 'Μ'),
+            (r'\\Nu', 'Ν'), (r'\\Xi', 'Ξ'), (r'\\Pi', 'Π'), (r'\\Rho', 'Ρ'),
+            (r'\\Sigma', 'Σ'), (r'\\Tau', 'Τ'), (r'\\Upsilon', 'Υ'), (r'\\Phi', 'Φ'),
+            (r'\\Chi', 'Χ'), (r'\\Psi', 'Ψ'), (r'\\Omega', 'Ω'),
+            (r'\\sum', '∑'), (r'\\int', '∫'), (r'\\partial', '∂'), (r'\\nabla', '∇'),
+            (r'\\approx', '≈'), (r'\\neq', '≠'), (r'\\leq', '≤'), (r'\\geq', '≥'),
+            (r'\\infty', '∞'), (r'\\in', '∈'), (r'\\notin', '∉'), (r'\\subset', '⊂'),
+            (r'\\subseteq', '⊆'), (r'\\cup', '∪'), (r'\\cap', '∩')
+        ]
+        
+        for latex_pattern, unicode_char in latex_replacements:
+            text = re.sub(latex_pattern, unicode_char, text)
+        
+        return text
+    
+    def markdown_to_html(self, text):
+        """Convert markdown to HTML with link support"""
+        import re
+        
+        # Debug: Check if there are any HTML tags in the input
+        html_tags = re.findall(r'<[^>]+>', text)
+        if html_tags:
+            print(f"Warning: Found HTML tags in input: {html_tags[:5]}")
+            # Remove any existing HTML tags to avoid conflicts
+            text = re.sub(r'<[^>]+>', '', text)
+        
+        # Convert markdown links [text](url) FIRST
+        def markdown_link_replacer(match):
+            link_text = match.group(1)
+            link_url = match.group(2)
+            print(f"Processing markdown link: [{link_text}]({link_url})")
+            # Use simple HTML without inline styles - let Qt handle the styling
+            return f'<a href="{link_url}">{link_text}</a>'
+        
+        # Use a more specific regex for markdown links
+        # This regex looks for [text](url) pattern but avoids HTML tags
+        text = re.sub(r'\[([^\]]+)\]\(([^)]+)\)', markdown_link_replacer, text, flags=re.DOTALL)
+        
+        # Convert remaining URLs to clickable links (only if not already converted)
+        url_pattern = r'https?://[^\s<>"]+'
+        def url_replacer(match):
+            url = match.group(0)
+            # Only convert if it's not already part of an HTML link
+            if not re.search(r'<a href="[^"]*' + re.escape(url) + r'[^"]*">', text):
+                return f'<a href="{url}">{url}</a>'
+            return url
+        text = re.sub(url_pattern, url_replacer, text)
+        
+        # Debug: Check if there are any remaining markdown links that weren't processed
+        remaining_links = re.findall(r'\[([^\]]+)\]\(([^)]+)\)', text)
+        if remaining_links:
+            print(f"Warning: Found remaining markdown links: {remaining_links}")
+        
+        # Debug: Print the text after markdown link processing
+        print(f"Text after markdown processing: {text[:200]}...")
+        
+
+        
+        # Convert bold **text** or __text__
+        text = re.sub(r'\*\*([^*]+)\*\*', r'<strong>\1</strong>', text)
+        text = re.sub(r'__([^_]+)__', r'<strong>\1</strong>', text)
+        
+        # Convert italic *text* or _text_
+        text = re.sub(r'\*([^*]+)\*', r'<em>\1</em>', text)
+        text = re.sub(r'_([^_]+)_', r'<em>\1</em>', text)
+        
+        # Convert code `text`
+        text = re.sub(r'`([^`]+)`', r'<code style="background-color: #f0f0f0; padding: 2px 4px; border-radius: 3px; font-family: monospace;">\1</code>', text)
+        
+        # Convert headers
+        text = re.sub(r'^### (.*$)', r'<h3>\1</h3>', text, flags=re.MULTILINE)
+        text = re.sub(r'^## (.*$)', r'<h2>\1</h2>', text, flags=re.MULTILINE)
+        text = re.sub(r'^# (.*$)', r'<h1>\1</h1>', text, flags=re.MULTILINE)
+        
+        # Convert lists
+        text = re.sub(r'^\* (.*$)', r'<li>\1</li>', text, flags=re.MULTILINE)
+        text = re.sub(r'^- (.*$)', r'<li>\1</li>', text, flags=re.MULTILINE)
+        
+        # Wrap lists in <ul> tags
+        lines = text.split('\n')
+        in_list = False
+        processed_lines = []
+        
+        for line in lines:
+            if line.strip().startswith('<li>'):
+                if not in_list:
+                    processed_lines.append('<ul>')
+                    in_list = True
+                processed_lines.append(line)
+            else:
+                if in_list:
+                    processed_lines.append('</ul>')
+                    in_list = False
+                processed_lines.append(line)
+        
+        if in_list:
+            processed_lines.append('</ul>')
+        
+        text = '\n'.join(processed_lines)
+        
+        # Convert line breaks to <br> - but preserve HTML tags
+        # Split by newlines, but don't break HTML tags
+        lines = text.split('\n')
+        processed_lines = []
+        
+        for line in lines:
+            if line.strip():  # If line has content
+                processed_lines.append(line)
+            else:  # Empty line becomes <br>
+                processed_lines.append('<br>')
+        
+        text = ''.join(processed_lines)
+        
+        # Ensure proper HTML structure
+        if not text.startswith('<'):
+            text = f'<div>{text}</div>'
+        
+        return text
+    
+    def _clean_url(self, url):
+        """Clean a URL by removing unwanted characters and HTML artifacts"""
+        import re
+        
+        # Remove trailing parentheses
+        while url.endswith(')'):
+            url = url[:-1]
+        
+        # Remove HTML tags
+        url = re.sub(r'<[^>]+>', '', url)
+        
+        # Remove URL-encoded HTML
+        url = re.sub(r'%3C[^%]*%3E', '', url)
+        
+        # Remove any remaining HTML entities
+        url = re.sub(r'&[^;]+;', '', url)
+        
+        return url.strip()
+    
+    def set_font_size(self, size):
+        """Set font size for the widget"""
+        self.document().setDefaultFont(QFont("Arial", size))
+    
+    def mousePressEvent(self, event):
+        """Handle mouse press events for link clicking"""
+        if event.button() == Qt.LeftButton:
+            # Get the cursor position
+            cursor = self.cursorForPosition(event.pos())
+            
+            # Check if the cursor is over a link
+            char_format = cursor.charFormat()
+            if char_format.isAnchor():
+                url = char_format.anchorHref()
+                if url and url.startswith('http'):
+                    print(f"Opening URL: {url}")
+                    # Open the URL in the default browser
+                    import webbrowser
+                    try:
+                        webbrowser.open(url)
+                        return  # Don't call parent if we handled the click
+                    except Exception as e:
+                        print(f"Failed to open URL {url}: {e}")
+            else:
+                # Try alternative method - check if we're over a link
+                anchor_names = char_format.anchorNames()
+                if anchor_names and len(anchor_names) > 0:
+                    anchor_name = anchor_names[0]
+                    if anchor_name.startswith('http'):
+                        print(f"Found anchor: {anchor_name}")
+                        # Try to extract URL from anchor
+                        import webbrowser
+                        try:
+                            webbrowser.open(anchor_name)
+                            return
+                        except Exception as e:
+                            print(f"Failed to open anchor URL {anchor_name}: {e}")
+                
+                # Debug: Print what we found
+                print(f"Debug - char_format.isAnchor(): {char_format.isAnchor()}")
+                print(f"Debug - anchorHref(): {char_format.anchorHref()}")
+                print(f"Debug - anchorNames(): {char_format.anchorNames()}")
+        
+        # Call the parent method for other mouse events
+        super().mousePressEvent(event)
+
+
+class ReferenceWindow(QWidget):
+    """Window for displaying reference links"""
+    
+    def __init__(self, references, parent=None):
+        super().__init__(parent)
+        self.references = references
+        self.setup_ui()
+    
+    def setup_ui(self):
+        """Setup the reference window UI"""
+        self.setWindowTitle(tr("reference_window_title"))
+        self.setFixedSize(600, 400)
+        self.setWindowFlags(Qt.Window | Qt.WindowStaysOnTopHint)
+        
+        layout = QVBoxLayout(self)
+        layout.setSpacing(10)
+        layout.setContentsMargins(20, 20, 20, 20)
+        
+        # Title
+        title = QLabel(tr("references"))
+        title.setFont(QFont("Arial", 14, QFont.Bold))
+        title.setAlignment(Qt.AlignCenter)
+        layout.addWidget(title)
+        
+        # Reference list
+        if self.references:
+            self.reference_list = QTextEdit()
+            self.reference_list.setReadOnly(True)
+            self.reference_list.setStyleSheet("""
+                QTextEdit {
+                    background-color: #f8f9fa;
+                    border: 1px solid #dee2e6;
+                    border-radius: 5px;
+                    padding: 10px;
+                    font-family: 'Courier New', monospace;
+                    font-size: 11px;
+                }
+            """)
+            
+            # Format references
+            reference_text = ""
+            for i, ref in enumerate(self.references, 1):
+                # Truncate long URLs for display
+                display_text = ref
+                if len(ref) > 80:
+                    display_text = ref[:77] + "..."
+                reference_text += f"{i}. {display_text}\n"
+            
+            self.reference_list.setText(reference_text)
+            layout.addWidget(self.reference_list)
+            
+            # Instructions
+            instruction = QLabel(tr("click_to_open"))
+            instruction.setStyleSheet("color: #6c757d; font-style: italic;")
+            instruction.setAlignment(Qt.AlignCenter)
+            layout.addWidget(instruction)
+            
+            # Buttons
+            button_layout = QHBoxLayout()
+            
+            # Open all button
+            self.open_all_btn = QPushButton("🌐 " + tr("open_all_references"))
+            self.open_all_btn.clicked.connect(self.open_all_references)
+            button_layout.addWidget(self.open_all_btn)
+            
+            button_layout.addStretch()
+            
+            # Close button
+            self.close_btn = QPushButton(tr("close"))
+            self.close_btn.clicked.connect(self.close)
+            button_layout.addWidget(self.close_btn)
+            
+            layout.addLayout(button_layout)
+            
+        else:
+            # No references found
+            no_refs_label = QLabel(tr("no_references_found"))
+            no_refs_label.setStyleSheet("color: #6c757d; font-size: 14px;")
+            no_refs_label.setAlignment(Qt.AlignCenter)
+            layout.addWidget(no_refs_label)
+            
+            # Close button
+            self.close_btn = QPushButton(tr("close"))
+            self.close_btn.clicked.connect(self.close)
+            layout.addWidget(self.close_btn)
+    
+    def open_all_references(self):
+        """Open all references in browser"""
+        import webbrowser
+        for ref in self.references:
+            try:
+                webbrowser.open(ref)
+            except Exception as e:
+                print(f"Error opening {ref}: {e}")
 
 
 class PDFRenderer(QObject):
@@ -774,6 +1259,7 @@ class MainWindow(QMainWindow):
         # Initialize flags to prevent recursive changes
         self._font_size_changing = False
         self._question_selection_changing = False
+        self.context_text = ""  # Store context for prompts
         
         # API configuration
         self.api_keys = load_secrets()
@@ -1001,8 +1487,10 @@ class MainWindow(QMainWindow):
         
         # Response
         control_layout.addWidget(QLabel(tr("llm_response") + ":"))
-        self.response_text = QTextEdit()
+        self.response_text = MarkdownTextWidget()
         control_layout.addWidget(self.response_text)
+        
+
         
         splitter.addWidget(control_widget)
     
@@ -1026,6 +1514,8 @@ class MainWindow(QMainWindow):
         
         # Question selection control
         self.suggested_questions_combo.currentTextChanged.connect(self.on_question_selection_change)
+        
+
         
         # Panel controls
         self.wider_btn.clicked.connect(self.widen_panel)
@@ -1249,7 +1739,7 @@ class MainWindow(QMainWindow):
             # Apply font size to text areas
             font = QFont("Arial", font_size)
             self.extracted_text.setFont(font)
-            self.response_text.setFont(font)
+            self.response_text.set_font_size(font_size)
             
             # Update status
             self.status_label.setText(tr("font_size_changed") + str(font_size) + tr("pt"))
@@ -1331,47 +1821,53 @@ class MainWindow(QMainWindow):
             start_page = max(0, current_page_num - pages_around)
             end_page = min(total_pages - 1, current_page_num + pages_around)
             
-            extracted_text_parts = []
+            # Extract selected text from current page first
+            selected_text = ""
+            current_page = self.renderer.pdf_doc[current_page_num]
             
+            # Convert screen coordinates to PDF coordinates
+            scale_factor = self.renderer.fit_to_panel_zoom * self.renderer.zoom_level
+            
+            # Get scroll area offsets
+            scroll_x = self.pdf_viewer.scroll_area.horizontalScrollBar().value()
+            scroll_y = self.pdf_viewer.scroll_area.verticalScrollBar().value()
+            
+            # Convert screen coordinates to PDF coordinates
+            pdf_x1 = (min(self.selection_start.x(), self.selection_end.x()) + scroll_x) / scale_factor
+            pdf_y1 = (min(self.selection_start.y(), self.selection_end.y()) + scroll_y) / scale_factor
+            pdf_x2 = (max(self.selection_start.x(), self.selection_end.x()) + scroll_x) / scale_factor
+            pdf_y2 = (max(self.selection_start.y(), self.selection_end.y()) + scroll_y) / scale_factor
+            
+            # Create a rectangle for text extraction
+            rect = fitz.Rect(pdf_x1, pdf_y1, pdf_x2, pdf_y2)
+            
+            # Extract text from the selected region
+            selected_text = current_page.get_text("text", clip=rect).strip()
+            
+            # Extract context pages (if any)
+            context_parts = []
             for page_num in range(start_page, end_page + 1):
-                page = self.renderer.pdf_doc[page_num]
-                
-                if page_num == current_page_num:
-                    # For the current page, extract from selected region
-                    # Convert screen coordinates to PDF coordinates
-                    scale_factor = self.renderer.fit_to_panel_zoom * self.renderer.zoom_level
-                    
-                    # Get scroll area offsets
-                    scroll_x = self.pdf_viewer.scroll_area.horizontalScrollBar().value()
-                    scroll_y = self.pdf_viewer.scroll_area.verticalScrollBar().value()
-                    
-                    # Convert screen coordinates to PDF coordinates
-                    pdf_x1 = (min(self.selection_start.x(), self.selection_end.x()) + scroll_x) / scale_factor
-                    pdf_y1 = (min(self.selection_start.y(), self.selection_end.y()) + scroll_y) / scale_factor
-                    pdf_x2 = (max(self.selection_start.x(), self.selection_end.x()) + scroll_x) / scale_factor
-                    pdf_y2 = (max(self.selection_start.y(), self.selection_end.y()) + scroll_y) / scale_factor
-                    
-                    # Create a rectangle for text extraction
-                    rect = fitz.Rect(pdf_x1, pdf_y1, pdf_x2, pdf_y2)
-                    
-                    # Extract text from the selected region
-                    page_text = page.get_text("text", clip=rect)
-                    
-                    if page_text.strip():
-                        extracted_text_parts.append(page_text.strip())
-                else:
-                    # For other pages, extract all text
+                if page_num != current_page_num:  # Skip current page (already extracted selected text)
+                    page = self.renderer.pdf_doc[page_num]
                     page_text = page.get_text("text")
                     if page_text.strip():
-                        extracted_text_parts.append(page_text.strip())
+                        context_parts.append(page_text.strip())
             
-            # Combine all extracted text
-            if extracted_text_parts:
-                full_text = "\n\n".join(extracted_text_parts)
-                self.extracted_text.setText(full_text)
-                self.status_label.setText(tr("text_extracted") + str(len(extracted_text_parts)) + tr("page(s)") + ": " + str(len(full_text)) + tr("characters"))
+            # Always show only the selected text in the extract text box
+            if selected_text:
+                self.extracted_text.setText(selected_text)
+                
+                # Store context separately for the prompt
+                if context_parts:
+                    self.context_text = "\n\n".join(context_parts)
+                else:
+                    self.context_text = ""
+                
+                total_pages_extracted = 1 + len(context_parts)  # Selected page + context pages
+                self.status_label.setText(tr("text_extracted") + str(total_pages_extracted) + tr("page(s)") + ": " + str(len(selected_text)) + tr("characters"))
             else:
                 self.extracted_text.setText(tr("no_text_found_in_selection"))
+                self.context_text = ""
                 self.status_label.setText(tr("no_text_found_in_selection"))
                 
         except Exception as e:
@@ -1415,7 +1911,30 @@ class MainWindow(QMainWindow):
             language_instruction = self.get_language_instruction(detected_language)
             
             # Prepare the prompt for the LLM
-            prompt = f"""{tr('based_on_text_prompt')}
+            # Use the stored context if available
+            if hasattr(self, 'context_text') and self.context_text:
+                selected_text = extracted_text
+                context_text = self.context_text
+                prompt = f"""{tr('based_on_text_prompt')}
+
+**{tr('selected_text')} (Main Focus - The specific text you selected):**
+{selected_text}
+
+**{tr('background_context')} (Additional Context - For reference only):**
+{context_text}
+
+{tr('question')}: {question}
+
+{language_instruction}
+
+{tr('please_provide_clear_and_accurate_answer_based_primarily_on_selected_text_above_with_context_as_background')}
+
+**Important**: Focus your answer primarily on the selected text above. Use the background context only for additional information or clarification when needed.
+
+Please include relevant sources and references if available."""
+            else:
+                # No context, just selected text
+                prompt = f"""{tr('based_on_text_prompt')}
 
 {tr('text')}: {extracted_text}
 
@@ -1423,7 +1942,9 @@ class MainWindow(QMainWindow):
 
 {language_instruction}
 
-{tr('please_provide_clear_and_accurate_answer_based_only_on_information_in_text_above')}"""
+{tr('please_provide_clear_and_accurate_answer_based_only_on_information_in_text_above')}
+
+Please include relevant sources and references if available."""
 
             # Get answer length preference and choose appropriate model
             answer_length = self.answer_length_combo.currentText()
@@ -1437,10 +1958,79 @@ class MainWindow(QMainWindow):
             # Call the LLM
             response = send_prompt_to_perplexity(prompt, api_key, model=model)
             
-            if response:
+            # Extract content, citations, and search results from the response
+            content = ""
+            citations = []
+            search_results = []
+            
+            if isinstance(response, dict):
+                # Extract citations and search results
+                citations = response.get('citations', [])
+                search_results = response.get('search_results', [])
+                
+                # Extract content from choices
+                if 'choices' in response and len(response['choices']) > 0:
+                    content = response['choices'][0]['message']['content']
+                else:
+                    print("Warning: No content found in response choices")
+                    return
+            elif isinstance(response, str):
+                # If response is just a string, use it as content
+                content = response
+            else:
+                print(f"Warning: Unexpected response type: {type(response)}")
+                return
+            
+            if content:
+                
                 # Clean up response - remove <think> tags if present
-                cleaned_response = self.clean_llm_response(response)
-                self.response_text.setText(cleaned_response)
+                cleaned_response = self.clean_llm_response(content)
+                
+                # Add citations to the response if available (BEFORE markdown processing)
+                if citations:
+                    print(f"Processing {len(citations)} citations...")
+                    citations_text = "\n\n## References\n\n"
+                    
+                    # Create a mapping of URLs to titles from search results
+                    url_to_title = {}
+                    if search_results:
+                        for result in search_results:
+                            if 'url' in result and 'title' in result:
+                                url_to_title[result['url']] = result['title']
+                    
+                    for i, citation in enumerate(citations, 1):
+                        # Clean the URL using the helper method
+                        import re
+                        clean_url = self.response_text._clean_url(citation)
+                        
+                        # Skip invalid URLs
+                        if not clean_url.startswith('http'):
+                            print(f"Warning: Invalid URL format: {clean_url}")
+                            continue
+                        
+                        # Use title if available, otherwise use the cleaned URL as title
+                        title = url_to_title.get(citation, clean_url)
+                        
+                        # Ensure the title doesn't contain any HTML artifacts
+                        title = re.sub(r'<[^>]+>', '', title)
+                        
+                        # Format as markdown link with double newline
+                        citations_text += f"{i}. [{title}]({clean_url})\n\n"
+                        print(f"Added citation {i}: [{title}]({clean_url})")
+                    
+                    cleaned_response += citations_text
+                    print(f"Added {len(citations)} citations to response")
+                
+                # Get current font size
+                current_font_size = self.response_text.document().defaultFont().pointSize()
+                if current_font_size <= 0:
+                    current_font_size = 12  # Default
+                
+                # Set markdown text with current font size
+                self.response_text.set_markdown_text(cleaned_response, current_font_size)
+                
+
+                
                 self.status_label.setText(tr("question_answered").format(language=detected_language, chars=len(cleaned_response)))
             else:
                 self.response_text.setText(tr("error_could_not_get_response_from_llm") + tr("please_check_your_api_key"))
@@ -1494,10 +2084,22 @@ class MainWindow(QMainWindow):
             # Call the LLM - use sonar for question generation (faster and cleaner)
             response = send_prompt_to_perplexity(prompt, api_key, model="sonar")
             
-            if response:
+            # Extract content from response
+            content = ""
+            if isinstance(response, dict) and 'choices' in response:
+                content = response['choices'][0]['message']['content']
+            elif isinstance(response, str):
+                content = response
+            else:
+                print(f"Warning: Unexpected response type in question generation: {type(response)}")
+                QMessageBox.warning(self, tr("error"), tr("could_not_generate_questions") + tr("please_check_your_api_key"))
+                return
+            
+            if content:
+                
                 # Parse the response to extract questions
                 # Clean up the response and split by lines
-                lines = response.strip().split('\n')
+                lines = content.strip().split('\n')
                 questions = []
                 
                 for line in lines:
@@ -1634,6 +2236,25 @@ class MainWindow(QMainWindow):
         response = response.strip()
         
         return response
+    
+
+    
+    def open_reference_link(self, text):
+        """Open selected reference link in browser"""
+        if text.startswith("📚") or text == "📚 Select a reference to open:":
+            return
+        
+        # Extract the URL from the dropdown text
+        import re
+        url_match = re.search(r'https?://[^\s<>"]+', text)
+        if url_match:
+            url = url_match.group(0)
+            import webbrowser
+            try:
+                webbrowser.open(url)
+                self.status_label.setText(f"🌐 Opened: {url[:50]}...")
+            except Exception as e:
+                self.status_label.setText(f"❌ Error opening link: {str(e)}")
     
 def main():
     """Main application entry point"""

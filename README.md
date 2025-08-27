@@ -51,6 +51,7 @@ pip install -r requirements.txt
 - PyMuPDF (PDF processing)
 - Pillow (image processing)
 - requests (API communication)
+- markdown (text formatting and rendering)
 
 ## 🔑 API Configuration
 
@@ -86,32 +87,29 @@ Create a `secrets.json` file in the root directory:
 
 **Note:** The application will show clear error messages if the API key is missing or invalid.
 
-## ✨ Features
+## 🚀 Features
 
-### LLM PDF Reader
-- 📖 **Visual PDF navigation** with page selector and zoom controls
-- 🖱️ **Click-and-drag text selection** with visual feedback
-- 🎯 **Fast text extraction** using PyMuPDF (fitz)
-- 🌍 **Automatic language detection** and multilingual responses (Chinese, Japanese, Korean, Arabic, Russian, Thai, Hindi, and more)
-- 🤖 **AI-powered question generation** from selected text
-- 💬 **Interactive Q&A** with customizable answer lengths
-- 📄 **Context window selection** (±0, ±1, ±2, ±5 pages) for multi-page text extraction
-- 🎨 **Font size controls** for better readability
-- 📜 **Resizable panels** with drag dividers
-- 🔍 **Zoom controls** (25% to 400%) with mouse wheel or buttons
-- 📐 **Panel sizing** with keyboard shortcuts (Ctrl+Left/Right)
+### Core Functionality
+- **PDF Text Extraction**: Extract text from selected regions with multiple extraction methods
+- **LLM Integration**: Ask questions about extracted text using Perplexity API
+- **Multi-language Support**: Automatic language detection and response in user's preferred language
+- **Smart Question Generation**: AI-powered question suggestions based on extracted content
 
-### LLM Integration
-- **Smart model selection**: Uses `sonar` for questions, `sonar-reasoning` for complex answers
-- **Response cleaning**: Automatically removes `<think>` tags from LLM responses
-- **Cost optimization**: Chooses appropriate models based on answer length
-- **Error handling**: Clear feedback for missing or invalid API keys
+### Enhanced Text Display
+- **Markdown Rendering**: Rich text formatting with support for bold, italic, headers, lists, and code blocks
+- **LaTeX Support**: Mathematical expressions and symbols rendered properly
+- **Automatic Citations**: References are automatically displayed as clickable links in the response
+- **Font Size Control**: Adjustable text size for better readability
 
-### Text Extraction
-- ⚡ **Fast and reliable**: Uses PyMuPDF for consistent text extraction
-- 🎯 **Visual selection**: Red selection box shows exactly what will be extracted
-- 📋 **No setup required**: Works out of the box
-- 🔍 **Cross-platform**: Consistent behavior on Windows, macOS, and Linux
+### Context Management
+- **Context Window**: Extract additional pages as background context (±0 to ±5 pages)
+- **Smart Text Separation**: Selected text (red box) is always the main focus, context pages provide background
+- **Clear Prompt Structure**: LLM receives clear distinction between selected text and background context
+
+### User Experience
+- **Intuitive Interface**: Clean, modern UI with easy-to-use controls
+- **Real-time Feedback**: Status updates and progress indicators
+- **Error Handling**: Comprehensive error messages and fallback options
 
 ## 🧪 Testing
 
@@ -154,7 +152,8 @@ The system supports mathematical notation through PyMuPDF text extraction:
 6. **Extract Text**: Click "Extract Text" to get selected content
 7. **Generate Questions**: Click "Generate Questions" for AI-suggested questions
 8. **Ask Questions**: Type custom questions or select from dropdown
-9. **Adjust Settings**: Use font size and answer length controls
+9. **Click Links**: Click any URL or citation link in the response to open it directly in your browser
+10. **Adjust Settings**: Use font size and answer length controls
 
 ### Textbook Highlighter (Legacy)
 For basic textbook highlighting functionality:
@@ -182,6 +181,73 @@ python main.py
 - **Memory efficient**: Processes one page at a time
 - **Fast rendering**: PyMuPDF provides quick PDF display
 - **Smart caching**: Avoids redundant API calls
+
+## 🚀 Future Development Roadmap
+
+### 📚 PDF Library & Vector Store Integration
+
+**Vision**: Transform from single-PDF processing to a comprehensive PDF library management system with intelligent context retrieval.
+
+#### **Phase 1: Vector Store Foundation**
+- **Embedding Generation**: Convert PDF text chunks into high-dimensional vectors
+- **Vector Database**: Implement local vector storage (ChromaDB, FAISS, or Pinecone)
+- **Chunking Strategy**: Intelligent text segmentation preserving semantic meaning
+- **Metadata Storage**: Store PDF metadata, page numbers, and chunk relationships
+
+#### **Phase 2: Multi-PDF Library Management**
+- **Library Interface**: GUI for managing multiple PDF collections
+- **Batch Processing**: Upload and process entire PDF libraries
+- **Collection Organization**: Create themed collections (e.g., "Mathematics", "Physics", "Computer Science")
+- **Search Across Library**: Find relevant content across all PDFs in the library
+
+#### **Phase 3: Advanced Context Retrieval**
+- **Semantic Search**: Find the most relevant PDF chunks for any question
+- **Context-Aware Responses**: LLM responses based on content from multiple PDFs
+- **Cross-Reference Detection**: Automatically identify related concepts across different documents
+- **Citation Tracking**: Track which PDFs and pages contributed to each response
+
+#### **Phase 4: Intelligent Features**
+- **Knowledge Graph**: Build relationships between concepts across the entire library
+- **Concept Clustering**: Group related topics and concepts automatically
+- **Learning Paths**: Suggest reading sequences based on topic dependencies
+- **Collaborative Annotations**: Share highlights and notes across users
+
+#### **Technical Architecture**
+```
+PDF Library System
+├── Vector Store Layer
+│   ├── Embedding Engine (OpenAI, SentenceTransformers)
+│   ├── Vector Database (ChromaDB/FAISS)
+│   └── Chunking Pipeline
+├── Library Management
+│   ├── PDF Collection Manager
+│   ├── Metadata Indexer
+│   └── Search Engine
+├── Context Retrieval
+│   ├── Semantic Search
+│   ├── Relevance Ranking
+│   └── Context Assembly
+└── Enhanced LLM Integration
+    ├── Multi-PDF Context Injection
+    ├── Citation Generation
+    └── Knowledge Synthesis
+```
+
+#### **Benefits of Vector Store Integration**
+- **📖 Comprehensive Knowledge**: Access information across entire PDF libraries
+- **🎯 Precise Context**: Retrieve the most relevant content for any question
+- **⚡ Fast Retrieval**: Vector similarity search for instant results
+- **🔗 Cross-Document Insights**: Connect concepts across multiple sources
+- **📊 Scalable**: Handle libraries with thousands of PDFs efficiently
+- **🧠 Intelligent**: AI-powered content discovery and relationship mapping
+
+#### **Implementation Timeline**
+- **Q1 2024**: Vector store foundation and single-PDF enhancement
+- **Q2 2024**: Multi-PDF library management interface
+- **Q3 2024**: Advanced context retrieval and semantic search
+- **Q4 2024**: Knowledge graph and collaborative features
+
+This roadmap will transform the application from a single-PDF reader into a comprehensive knowledge management system for academic and research workflows.
 
   
 
