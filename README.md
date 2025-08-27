@@ -4,22 +4,24 @@ A modern, intelligent PDF reader powered by Perplexity AI. Features cross-platfo
 
 ## 🚀 Quick Start
 
-### Option 1: Install from Package (Recommended)
+### Install from Package (Recommended)
 Download the latest installer from the [GitHub Releases](https://github.com/yourusername/LLM-textbook-highlighter/releases):
-- **macOS**: `LLM-PDF-Reader-Installer.dmg` (6.7MB) - Drag & drop installation
-- **All Platforms**: `LLM-PDF-Reader-Installer.zip` (19.4MB) - Extract and run
+- **macOS**: `LLM-PDF-Reader-Installer.dmg` (~70MB) - Professional drag & drop installation
+- **All Platforms**: `LLM-PDF-Reader-Installer.zip` (~65MB) - Extract and run
 
-### Option 2: Run from Source
+### Run from Source
 ```bash
+# Install dependencies
+pip install -r requirements.txt
+
+# Launch the application
 python run_reader.py
 ```
 
 **Features:**
-- **Reliable dropdowns**: PySide6 provides consistent dropdown functionality across all platforms
 - **Professional UI**: Native look and feel on Windows, macOS, and Linux
 - **Fast PDF rendering**: Uses PyMuPDF for efficient text extraction
 - **Cross-platform compatibility**: Works identically on all operating systems
-- **Better Mac compatibility**: PySide6 has improved compatibility with macOS
 - **Built-in API configuration**: Easy setup for Perplexity API key
 
 
@@ -30,28 +32,31 @@ python run_reader.py
 LLM-textbook-highlighter/
 ├── src/                     # Core application modules
 │   ├── config.py           # Configuration and settings
-│   ├── reader.py  # Cross-platform GUI
+│   ├── reader.py           # Main GUI application
 │   ├── llm.py              # Perplexity API integration  
 │   └── utils.py            # Utility functions
 ├── tests/                   # Test PDFs for development
-├── run_reader.py  # Cross-platform launcher
-├── main.py                 # Textbook highlighter
+├── run_reader.py           # Application launcher
+├── build_mac_installer.py  # Unified packaging script
+├── create_release.py       # Release helper script
+├── requirements.txt        # Python dependencies
 └── secrets.json            # API keys (create this file)
 ```
 
 ## 🔧 Installation
 
-### Installation
-```bash
-pip install -r requirements.txt
-```
-
-**Dependencies:**
+### Dependencies
+The application requires the following Python packages:
 - PySide6 (cross-platform GUI)
 - PyMuPDF (PDF processing)
 - Pillow (image processing)
 - requests (API communication)
 - markdown (text formatting and rendering)
+
+Install all dependencies with:
+```bash
+pip install -r requirements.txt
+```
 
 ## 🔑 API Configuration
 
@@ -123,16 +128,16 @@ The system supports mathematical notation through PyMuPDF text extraction:
 - **Operators**: ∑, ∫, ∂, ∇, ≈, ≠, ≤, ≥, ∞
 - **Sets**: ∈, ∉, ⊆, ∪, ∩
 
-## 📦 Installation
+## 📦 Package Installation
 
 ### macOS Users
-1. Download `LLM-PDF-Reader-Installer.dmg` from the `installations/` folder
+1. Download `LLM-PDF-Reader-Installer.dmg` from [GitHub Releases](https://github.com/yourusername/LLM-textbook-highlighter/releases)
 2. Double-click to mount the DMG
 3. Drag "LLM PDF Reader.app" to your Applications folder
 4. Launch from Applications or Spotlight
 
 ### All Platforms
-1. Download `LLM-PDF-Reader-Installer.zip` from the `installations/` folder
+1. Download `LLM-PDF-Reader-Installer.zip` from [GitHub Releases](https://github.com/yourusername/LLM-textbook-highlighter/releases)
 2. Extract the ZIP file
 3. Run the application directly
 
@@ -155,11 +160,7 @@ The system supports mathematical notation through PyMuPDF text extraction:
 9. **Click Links**: Click any URL or citation link in the response to open it directly in your browser
 10. **Adjust Settings**: Use font size and answer length controls
 
-### Textbook Highlighter (Legacy)
-For basic textbook highlighting functionality:
-```bash
-python main.py
-```
+
 
 ## 🛠️ Development
 
@@ -168,6 +169,25 @@ python main.py
 - **PDF Processing**: PyMuPDF for text extraction and rendering
 - **LLM Integration**: Perplexity API with smart model selection
 - **Configuration**: JSON-based settings and API key management
+
+### Building Packages
+The project includes a unified packaging system for creating macOS installers:
+
+```bash
+# Build all packages (app bundle, DMG, ZIP)
+python build_mac_installer.py
+
+# Build only app bundle
+python build_mac_installer.py --no-dmg --no-zip
+
+# Create PKG installer (requires installer/ directory)
+python build_mac_installer.py --pkg
+
+# Clean build directories
+python build_mac_installer.py --clean
+```
+
+For more details, see [PACKAGING.md](PACKAGING.md).
 
 ### Key Components
 - `src/reader.py`: Main application with GUI and PDF handling
