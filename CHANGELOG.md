@@ -2,6 +2,18 @@
 
 ## [Unreleased]
 
+### 🚀 Major Features: Research Integration & Modular Architecture
+- **📚 ArXiv Research Integration**: Direct ArXiv API integration for automatic paper search and citation
+  - **Smart Search Term Extraction**: Intelligent keyword extraction focusing on mathematical concepts
+  - **Automatic Research Enhancement**: LLM responses automatically enhanced with related research papers
+  - **Clickable Paper Links**: Direct links to ArXiv pages and PDF downloads
+  - **Research Panel**: Dedicated UI for manual paper search and exploration
+- **🏗️ Modular Architecture**: Complete codebase refactoring for maintainability
+  - **Separated GUI Components**: `PDFViewer`, `TextPanel`, `ResearchPanel`, `MainWindow`
+  - **Service Layer**: `ArxivService`, `LLMService`, `PDFProcessor`
+  - **Utility Modules**: `LanguageSupport`, `MarkdownTextWidget`
+  - **Clean Imports**: Proper package structure with `__init__.py` files
+
 ### Enhanced Text Display
 - **Automatic Citations**: References are now automatically displayed as clickable links in the response
 - **Context Window Logic**: Fixed context window to properly separate selected text from background context
@@ -13,11 +25,48 @@
 - **Fixed Citation Links**: URLs no longer have trailing `)` characters or extra `[` symbols
 - **Fixed Mouse Click Errors**: Resolved `AttributeError` with `anchorName()` vs `anchorNames()`
 - **Fixed Markdown Processing**: Improved order of operations to prevent link processing conflicts
+- **Fixed Search Term Extraction**: Improved mathematical concept recognition and filtering
 
 ### Technical Improvements
 - **Cleaner Prompt Structure**: Enhanced LLM prompts to clearly distinguish between selected text and background context
 - **Better Debug Output**: Improved console logging for easier troubleshooting
 - **Simplified HTML Generation**: Removed inline styles in favor of CSS styling for better link rendering
+- **Direct ArXiv API**: Replaced problematic MCP integration with reliable direct API calls
+
+### 🔮 Future Improvements (Planned)
+- **Enhanced Search Algorithms**: 
+  - **ML-based Keyword Extraction**: 
+    - **Phraseformer approach**: BERT + graph embeddings for multimodal key-phrase extraction
+    - **Hybrid NLP pipeline**: SpaCy NER + FinBERT-based KeyBERT embeddings + YAKE + EmbedRank
+    - **Zshot framework**: Zero-shot NER and relation extraction using large language models
+  - **Semantic Search & Embeddings**:
+    - **Game-theoretic compression**: Optimize latent-space compression for transformer-based vector search
+    - **Multi-task embeddings**: Unified query/paper embeddings like OmniSearchSage
+    - **Citation-aware search**: MP-BERT4CR for multi-positive citation recommendation
+  - **Academic Research Integration**:
+    - **IntellectSeeker approach**: LLM-based semantic enhancement with probabilistic filtering
+    - **Citation network analysis**: CQBG-R for citation-query blended graph ranking
+    - **Multi-database support**: Expand beyond ArXiv to PubMed, IEEE, ACM, and other research databases
+- **Research Panel Enhancements**:
+  - Add paper filtering by date, category, and relevance score
+  - Implement paper comparison and side-by-side viewing
+  - Add paper bookmarking and personal library features
+  - Export research findings to citation managers (Zotero, Mendeley)
+- **AI Research Assistant**:
+  - Automatic paper summarization and key point extraction
+  - Research trend analysis and visualization
+  - Citation recommendation based on selected text
+  - Integration with academic writing tools
+- **Performance Optimizations**:
+  - Cache frequently searched papers and results
+  - Implement background paper downloading
+  - Add offline paper storage and management
+  - Optimize search queries for better relevance
+- **User Experience**:
+  - Add research history and search suggestions
+  - Implement paper recommendation system
+  - Add research collaboration features
+  - Create research project organization tools
 
 ## [2.1.0] - 2025-08-26
 
