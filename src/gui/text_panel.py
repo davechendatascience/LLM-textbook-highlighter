@@ -226,15 +226,23 @@ class TextPanel(QWidget):
         if not question or not self.extracted_text:
             return
             
-        # Prepare the prompt with context
-        prompt = self.build_prompt(question)
-        
         # Get answer length preference
         length = self.length_combo.currentText().lower()
         
         try:
-            # Call LLM service
-            response = self.llm_service.ask_question(prompt, length)
+            # Check if we have a current PDF and vector store is available
+            if (hasattr(self.llm_service, 'current_pdf_name') and 
+                self.llm_service.current_pdf_name and
+                hasattr(self.llm_service, 'ask_question_with_context')):
+                
+                # Use vector store enhanced question answering
+                response = self.llm_service.ask_question_with_context(
+                    question, self.extracted_text, length
+                )
+            else:
+                # Use regular question answering
+                prompt = self.build_prompt(question)
+                response = self.llm_service.ask_question(prompt, length)
             
             # Check if it's an API key error
             if "No API key configured" in response:

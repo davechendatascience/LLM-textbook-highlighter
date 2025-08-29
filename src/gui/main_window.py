@@ -12,6 +12,7 @@ from PySide6.QtGui import QAction, QKeySequence
 # Use absolute imports
 from src.gui.pdf_viewer import PDFViewer
 from src.gui.text_panel import TextPanel
+from src.gui.vector_store_panel import VectorStorePanel
 from src.utils.language_support import LanguageSupport
 
 
@@ -26,11 +27,12 @@ class MainWindow(QMainWindow):
         
         # Set window title
         self.setWindowTitle(self.language_support.get_text("window_title"))
-        self.setGeometry(100, 100, 1400, 900)
+        self.setGeometry(100, 100, 1600, 900)  # Increased width for vector store panel
         
         # Initialize components
         self.pdf_viewer = PDFViewer(self.language_support)
         self.text_panel = TextPanel(self.language_support)
+        self.vector_store_panel = VectorStorePanel(self.text_panel.llm_service)
         
         self.setup_ui()
         self.setup_menu()
@@ -45,11 +47,12 @@ class MainWindow(QMainWindow):
         # Main layout
         main_layout = QHBoxLayout(central_widget)
         
-        # Main splitter - PDF viewer and text panel only
+        # Main splitter - PDF viewer, text panel, and vector store panel
         self.main_splitter = QSplitter(Qt.Horizontal)
         self.main_splitter.addWidget(self.pdf_viewer)
         self.main_splitter.addWidget(self.text_panel)
-        self.main_splitter.setSizes([800, 600])
+        self.main_splitter.addWidget(self.vector_store_panel)
+        self.main_splitter.setSizes([600, 500, 500])  # Adjusted sizes for three panels
         
         main_layout.addWidget(self.main_splitter)
         

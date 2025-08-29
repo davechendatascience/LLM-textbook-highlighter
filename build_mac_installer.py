@@ -142,7 +142,16 @@ a = Analysis(
         'xml.etree',
         'xml.etree.ElementTree',
         'xml.parsers',
-        'xml.parsers.expat'
+        'xml.parsers.expat',
+        'chromadb',
+        'sentence_transformers',
+        'tiktoken',
+        'chromadb.config',
+        'chromadb.api',
+        'chromadb.api.models',
+        'chromadb.api.types',
+        'chromadb.utils',
+        'chromadb.utils.embedding_functions'
     ],
     hookspath=[],
     hooksconfig={{}},

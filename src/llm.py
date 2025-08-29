@@ -7,8 +7,9 @@ import json
 import os
 import re
 import requests
-from typing import Optional, List
+from typing import Optional, List, Dict
 from src.services.arxiv_service import ArxivService, ArxivPaper
+from src.services.vector_store import VectorStoreService
 from src.utils.language_support import LanguageSupport
 
 
@@ -20,6 +21,13 @@ class LLMService:
         self.api_key = self.load_api_key()
         self.research_enabled = False  # Disabled since Perplexity already provides references
         self.arxiv_service = ArxivService()
+        
+        # Initialize vector store service
+        self.vector_store = VectorStoreService()
+        
+        # Track current PDF for context
+        self.current_pdf_name = None
+        self.current_pdf_path = None
         
     def load_api_key(self) -> Optional[str]:
         """Load API key from secrets.json"""
@@ -409,3 +417,129 @@ class LLMService:
         except Exception as e:
             print(f"Error generating questions: {e}")
             return f"Error: {str(e)}"
+    
+    # Vector Store Integration Methods
+    
+    def set_current_pdf(self, pdf_path: str, pdf_name: str = None):
+        """Set the current PDF for vector store operations"""
+        self.current_pdf_path = pdf_path
+        self.current_pdf_name = pdf_name or os.path.basename(pdf_path)
+        print(f"📄 Set current PDF: {self.current_pdf_name}")
+    
+    def process_current_pdf(self) -> bool:
+        """Process the current PDF and add chunks to vector store"""
+        if not self.current_pdf_path:
+            print("❌ No current PDF set")
+            return False
+        
+        try:
+            # Check if PDF is already processed
+            existing_chunks = self.vector_store.get_chunks_by_pdf(self.current_pdf_name)
+            if existing_chunks:
+                print(f"ℹ️ PDF {self.current_pdf_name} already processed with {len(existing_chunks)} chunks")
+                return True
+            
+            # Process the PDF
+            chunks = self.vector_store.process_pdf(self.current_pdf_path, self.current_pdf_name)
+            
+            if chunks:
+                # Add chunks to vector store
+                success = self.vector_store.add_document_chunks(chunks)
+                if success:
+                    print(f"✅ Successfully processed and indexed {len(chunks)} chunks from {self.current_pdf_name}")
+                    return True
+                else:
+                    print(f"❌ Failed to add chunks to vector store for {self.current_pdf_name}")
+                    return False
+            else:
+                print(f"❌ No chunks created from {self.current_pdf_name}")
+                return False
+                
+        except Exception as e:
+            print(f"❌ Error processing PDF: {e}")
+            return False
+    
+    def search_relevant_chunks(self, query: str, n_results: int = 3) -> List[Dict]:
+        """Search for relevant chunks in the current PDF"""
+        if not self.current_pdf_name:
+            print("❌ No current PDF set")
+            return []
+        
+        try:
+            # Search with PDF filter
+            filter_metadata = {"pdf_name": self.current_pdf_name}
+            results = self.vector_store.search_similar_chunks(query, n_results, filter_metadata)
+            return results
+        except Exception as e:
+            print(f"❌ Error searching chunks: {e}")
+            return []
+    
+    def ask_question_with_context(self, question: str, selected_text: str = "", length: str = "medium") -> str:
+        """Ask a question with enhanced context from vector store"""
+        if not self.api_key:
+            return "Error: No API key configured. Please configure your Perplexity API key."
+        
+        try:
+            # Search for relevant chunks
+            relevant_chunks = self.search_relevant_chunks(question)
+            
+            # Build enhanced context
+            enhanced_context = ""
+            if relevant_chunks:
+                enhanced_context = "\n\n**Relevant Context from Document:**\n\n"
+                for i, chunk in enumerate(relevant_chunks, 1):
+                    enhanced_context += f"**Context {i} (Page {chunk['metadata']['page_number']}):**\n"
+                    enhanced_context += f"{chunk['text']}\n\n"
+            
+            # Combine with selected text
+            if selected_text:
+                enhanced_context = f"**Selected Text:**\n{selected_text}\n\n" + enhanced_context
+            
+            # Build the prompt with enhanced context
+            prompt = self.build_prompt(question, "", enhanced_context)
+            
+            # Choose model based on length
+            if length.lower() == "long":
+                model = "sonar-reasoning"
+            else:
+                model = "sonar"
+            
+            # Get response from Perplexity API
+            headers = {
+                "Authorization": f"Bearer {self.api_key}",
+                "Content-Type": "application/json"
+            }
+            
+            data = {
+                "model": model,
+                "messages": [{"role": "user", "content": prompt}],
+                "max_tokens": 1000 if length.lower() == "short" else 2000,
+                "temperature": 0.1
+            }
+            
+            response = requests.post("https://api.perplexity.ai/chat/completions", headers=headers, json=data)
+            response.raise_for_status()
+            
+            result = response.json()
+            llm_response = result["choices"][0]["message"]["content"]
+            
+            # Process response with references
+            processed_response = self.parse_markdown_response(llm_response, result)
+            
+            return processed_response
+            
+        except Exception as e:
+            print(f"Error asking question with context: {e}")
+            return f"Error: {str(e)}"
+    
+    def get_vector_store_stats(self) -> Dict:
+        """Get statistics about the vector store"""
+        return self.vector_store.get_collection_stats()
+    
+    def clear_vector_store(self) -> bool:
+        """Clear all data from the vector store"""
+        return self.vector_store.clear_collection()
+    
+    def delete_pdf_from_store(self, pdf_name: str) -> bool:
+        """Delete a specific PDF from the vector store"""
+        return self.vector_store.delete_pdf_chunks(pdf_name)
