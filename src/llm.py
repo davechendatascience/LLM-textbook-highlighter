@@ -18,7 +18,7 @@ class LLMService:
     def __init__(self, language_support=None):
         self.language_support = language_support
         self.api_key = self.load_api_key()
-        self.research_enabled = True
+        self.research_enabled = False  # Disabled since Perplexity already provides references
         self.arxiv_service = ArxivService()
         
     def load_api_key(self) -> Optional[str]:

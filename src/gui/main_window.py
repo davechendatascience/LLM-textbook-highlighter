@@ -12,7 +12,6 @@ from PySide6.QtGui import QAction, QKeySequence
 # Use absolute imports
 from src.gui.pdf_viewer import PDFViewer
 from src.gui.text_panel import TextPanel
-from src.gui.research_panel import ResearchPanel
 from src.utils.language_support import LanguageSupport
 
 
@@ -32,7 +31,6 @@ class MainWindow(QMainWindow):
         # Initialize components
         self.pdf_viewer = PDFViewer(self.language_support)
         self.text_panel = TextPanel(self.language_support)
-        self.research_panel = ResearchPanel(self.language_support)
         
         self.setup_ui()
         self.setup_menu()
@@ -47,17 +45,10 @@ class MainWindow(QMainWindow):
         # Main layout
         main_layout = QHBoxLayout(central_widget)
         
-        # Left side: PDF viewer only (removed control panel)
-        # Right side: Text panels and research
-        right_splitter = QSplitter(Qt.Vertical)
-        right_splitter.addWidget(self.text_panel)
-        right_splitter.addWidget(self.research_panel)
-        right_splitter.setSizes([400, 200])
-        
-        # Main splitter
+        # Main splitter - PDF viewer and text panel only
         self.main_splitter = QSplitter(Qt.Horizontal)
         self.main_splitter.addWidget(self.pdf_viewer)
-        self.main_splitter.addWidget(right_splitter)
+        self.main_splitter.addWidget(self.text_panel)
         self.main_splitter.setSizes([800, 600])
         
         main_layout.addWidget(self.main_splitter)
@@ -99,7 +90,7 @@ class MainWindow(QMainWindow):
         self.pdf_viewer.page_changed.connect(self.on_page_changed)
         
         # Text panel signals
-        self.text_panel.research_requested.connect(self.research_panel.search_papers)
+        # self.text_panel.research_requested.connect(self.research_panel.search_papers) # Removed
         
         # PDF width adjustment signals
         self.pdf_viewer.wider_button.clicked.connect(self.adjust_pdf_width_wider)

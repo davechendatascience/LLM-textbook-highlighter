@@ -16,9 +16,6 @@ from src.gui.markdown_widget import MarkdownTextWidget
 class TextPanel(QWidget):
     """Text display and LLM interaction panel"""
     
-    # Signals
-    research_requested = Signal(str)  # Emitted when research is requested
-    
     def __init__(self, language_support=None):
         super().__init__()
         self.language_support = language_support
@@ -26,6 +23,7 @@ class TextPanel(QWidget):
         self.extracted_text = ""
         self.context_text = ""
         self.current_font_size = 12
+        self.current_markdown_content = ""  # Store current markdown content
         
         self.setup_ui()
         self.update_api_status()
@@ -130,17 +128,6 @@ class TextPanel(QWidget):
         self.length_combo.setCurrentText("Medium")
         controls_layout.addWidget(self.length_combo)
         
-        # Research enhancement toggle
-        from PySide6.QtWidgets import QCheckBox
-        self.research_enhancement_checkbox = QCheckBox("Enhance with Research")
-        self.research_enhancement_checkbox.setChecked(True)
-        self.research_enhancement_checkbox.setToolTip("Automatically find and include related research papers")
-        controls_layout.addWidget(self.research_enhancement_checkbox)
-        
-        self.research_button = QPushButton(self.language_support.get_text("find_related_papers") if self.language_support else "Find Related Papers")
-        self.research_button.clicked.connect(self.find_related_papers)
-        controls_layout.addWidget(self.research_button)
-        
         layout.addLayout(controls_layout)
         
         # API Key Status Section
@@ -229,8 +216,9 @@ class TextPanel(QWidget):
         font.setPointSize(self.current_font_size)
         self.extracted_text_edit.setFont(font)
         
-        # Also apply to response widget
-        self.response_widget.set_markdown_text(self.response_widget.toPlainText())
+        # Reapply the current markdown content with new font size
+        if self.current_markdown_content:
+            self.response_widget.set_markdown_text(self.current_markdown_content, self.current_font_size)
         
     def ask_question(self):
         """Ask a question to the LLM"""
@@ -244,29 +232,28 @@ class TextPanel(QWidget):
         # Get answer length preference
         length = self.length_combo.currentText().lower()
         
-        # Get research enhancement preference
-        find_related_papers = self.research_enhancement_checkbox.isChecked()
-        
         try:
-            # Call LLM service with research enhancement option
-            response = self.llm_service.ask_question(prompt, length, find_related_papers)
+            # Call LLM service
+            response = self.llm_service.ask_question(prompt, length)
             
             # Check if it's an API key error
             if "No API key configured" in response:
-                self.response_widget.set_markdown_text(
-                    f"{response}\n\n**To configure your API key:**\n"
-                    "1. Go to **Settings > Configure API Keys** in the menu bar\n"
-                    "2. Enter your Perplexity API key\n"
-                    "3. Click **Save**\n"
-                    "4. Try asking your question again",
-                    self.current_font_size
-                )
+                error_response = f"{response}\n\n**To configure your API key:**\n" \
+                               "1. Go to **Settings > Configure API Keys** in the menu bar\n" \
+                               "2. Enter your Perplexity API key\n" \
+                               "3. Click **Save**\n" \
+                               "4. Try asking your question again"
+                self.current_markdown_content = error_response
+                self.response_widget.set_markdown_text(error_response, self.current_font_size)
             else:
                 # Display response
-                self.response_widget.set_markdown_text(response)
+                self.current_markdown_content = response
+                self.response_widget.set_markdown_text(response, self.current_font_size)
             
         except Exception as e:
-            self.response_widget.set_markdown_text(f"Error: {str(e)}")
+            error_response = f"Error: {str(e)}"
+            self.current_markdown_content = error_response
+            self.response_widget.set_markdown_text(error_response, self.current_font_size)
             
     def generate_questions(self):
         """Generate questions based on extracted text"""
@@ -278,15 +265,13 @@ class TextPanel(QWidget):
             questions = self.llm_service.generate_questions(self.extracted_text)
             
             # Display questions
-            self.response_widget.set_markdown_text(questions)
+            self.current_markdown_content = questions
+            self.response_widget.set_markdown_text(questions, self.current_font_size)
             
         except Exception as e:
-            self.response_widget.set_markdown_text(f"Error generating questions: {str(e)}")
-            
-    def find_related_papers(self):
-        """Find related papers based on extracted text"""
-        if self.extracted_text:
-            self.research_requested.emit(self.extracted_text)
+            error_response = f"Error generating questions: {str(e)}"
+            self.current_markdown_content = error_response
+            self.response_widget.set_markdown_text(error_response, self.current_font_size)
             
     def build_prompt(self, question: str) -> str:
         """Build the prompt for the LLM"""
@@ -354,7 +339,7 @@ Please provide a clear, well-structured answer."""
         
         try:
             # Test with a simple query
-            test_response = self.llm_service.ask_question("Hello, this is a test message.", "short", find_related_papers=False)
+            test_response = self.llm_service.ask_question("Hello, this is a test message.", "short")
             
             if "Error:" in test_response:
                 # API test failed
