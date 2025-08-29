@@ -64,7 +64,7 @@ class LLMService:
                 model = "sonar-reasoning"
             else:
                 model = "sonar"
-            
+                
             # Get response from Perplexity API
             headers = {
                 "Authorization": f"Bearer {self.api_key}",
@@ -133,6 +133,13 @@ class LLMService:
             
     def build_prompt(self, question: str, selected_text: str = "", background_context: str = "") -> str:
         """Build a prompt for the LLM"""
+        # Get language-specific instructions if available
+        language_instruction = ""
+        if self.language_support and hasattr(self.language_support, 'current_language'):
+            current_lang = self.language_support.current_language
+            if current_lang != "English":
+                language_instruction = f"\nPlease respond in {current_lang}.\n"
+        
         prompt = f"Question: {question}\n\n"
         
         if selected_text:
@@ -141,7 +148,7 @@ class LLMService:
         if background_context:
             prompt += f"Background Context: {background_context}\n\n"
             
-        prompt += "Please provide a clear and comprehensive answer. Include any references or sources at the end of your response."
+        prompt += f"Please provide a clear and comprehensive answer.{language_instruction} Include any references or sources at the end of your response."
         
         return prompt
         
@@ -336,5 +343,44 @@ class LLMService:
         
     def generate_questions(self, text: str) -> str:
         """Generate questions based on text"""
-        base_prompt = f"Based on the following text, generate 3-5 thoughtful questions that could help someone understand the key concepts better:\n\n{text}"
-        return self.ask_question(base_prompt, length="short")
+        if not self.api_key:
+            return "Error: No API key configured. Please configure your Perplexity API key."
+            
+        try:
+            # Get language-specific instructions if available
+            language_instruction = ""
+            if self.language_support and hasattr(self.language_support, 'current_language'):
+                current_lang = self.language_support.current_language
+                if current_lang != "English":
+                    language_instruction = f" Please generate the questions in {current_lang}."
+            
+            base_prompt = f"Based on the following text, generate 3-5 thoughtful questions that could help someone understand the key concepts better:{language_instruction}\n\n{text}"
+            
+            # Choose model for short questions
+            model = "sonar"
+            
+            # Get response from Perplexity API
+            headers = {
+                "Authorization": f"Bearer {self.api_key}",
+                "Content-Type": "application/json"
+            }
+            
+            data = {
+                "model": model,
+                "messages": [{"role": "user", "content": base_prompt}],
+                "max_tokens": 1000,
+                "temperature": 0.1
+            }
+            
+            response = requests.post("https://api.perplexity.ai/chat/completions", headers=headers, json=data)
+            response.raise_for_status()
+            
+            result = response.json()
+            llm_response = result["choices"][0]["message"]["content"]
+            
+            # Return raw response without reference processing for questions
+            return llm_response
+            
+        except Exception as e:
+            print(f"Error generating questions: {e}")
+            return f"Error: {str(e)}"

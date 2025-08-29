@@ -6,4 +6,4 @@ requests==2.31.0
 PySide6>=6.5.0
 fasttext-wheel
 pillow
-python-markdown
+markdown
