@@ -136,7 +136,13 @@ a = Analysis(
         'fasttext.util',
         'llm',
         'config',
-        'utils'
+        'utils',
+        'markdown',
+        'xml',
+        'xml.etree',
+        'xml.etree.ElementTree',
+        'xml.parsers',
+        'xml.parsers.expat'
     ],
     hookspath=[],
     hooksconfig={{}},

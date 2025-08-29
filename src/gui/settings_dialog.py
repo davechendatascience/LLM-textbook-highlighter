@@ -119,14 +119,24 @@ class SettingsDialog(QDialog):
         
     def load_secrets(self):
         """Load current secrets from secrets.json"""
-        secrets_path = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), "secrets.json")
-        try:
-            with open(secrets_path, 'r') as f:
-                return json.load(f)
-        except FileNotFoundError:
-            return {}
-        except json.JSONDecodeError:
-            return {}
+        # Try multiple locations for secrets.json
+        possible_paths = [
+            os.path.join(os.path.expanduser("~"), "secrets.json"),  # Home directory (packaged app)
+            os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), "secrets.json"),  # Project root (development)
+        ]
+        
+        for secrets_path in possible_paths:
+            try:
+                if os.path.exists(secrets_path):
+                    print(f"🔍 Loading settings from: {secrets_path}")
+                    with open(secrets_path, 'r') as f:
+                        return json.load(f)
+            except (FileNotFoundError, json.JSONDecodeError) as e:
+                print(f"⚠️ Error loading from {secrets_path}: {e}")
+                continue
+        
+        print("❌ No settings file found, using defaults")
+        return {}
             
     def load_current_settings(self):
         """Load current settings into the UI"""
@@ -149,15 +159,17 @@ class SettingsDialog(QDialog):
                 "enable_web_search_by_default": self.enable_web_search_checkbox.isChecked()
             }
             
-            # Save to secrets.json
-            secrets_path = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), "secrets.json")
+            # Save to user's home directory for packaged app compatibility
+            secrets_path = os.path.join(os.path.expanduser("~"), "secrets.json")
             with open(secrets_path, 'w') as f:
                 json.dump(secrets_data, f, indent=2)
                 
+            print(f"✅ Settings saved successfully to {secrets_path}")
             QMessageBox.information(self, "Success", "Settings saved successfully!")
             self.accept()
             
         except Exception as e:
+            print(f"❌ Error saving settings: {e}")
             QMessageBox.critical(self, "Error", f"Failed to save settings: {str(e)}")
             
     def test_api_connection(self):

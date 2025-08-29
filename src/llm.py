@@ -23,32 +23,57 @@ class LLMService:
         
     def load_api_key(self) -> Optional[str]:
         """Load API key from secrets.json"""
-        try:
-            if os.path.exists("secrets.json"):
-                with open("secrets.json", "r") as f:
-                    secrets = json.load(f)
-                    return secrets.get("perplexity_api_key")
-        except Exception as e:
-            print(f"Error loading API key: {e}")
-            return None
+        # Try multiple locations for secrets.json
+        possible_paths = [
+            "secrets.json",  # Current directory (development)
+            os.path.join(os.path.expanduser("~"), "secrets.json"),  # Home directory
+            os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "..", "secrets.json"),  # Project root
+        ]
+        
+        for secrets_path in possible_paths:
+            try:
+                if os.path.exists(secrets_path):
+                    print(f"🔍 Loading API key from: {secrets_path}")
+                    with open(secrets_path, "r") as f:
+                        secrets = json.load(f)
+                        api_key = secrets.get("perplexity_api_key")
+                        if api_key:
+                            print(f"✅ API key loaded successfully from {secrets_path}")
+                            return api_key
+            except Exception as e:
+                print(f"⚠️ Error loading from {secrets_path}: {e}")
+                continue
+        
+        print("❌ No API key found in any location")
+        return None
             
     def save_api_key(self, api_key: str):
         """Save API key to secrets.json"""
         try:
+            # Save to user's home directory for packaged app compatibility
+            secrets_path = os.path.join(os.path.expanduser("~"), "secrets.json")
+            
+            # Load existing secrets if they exist
             secrets = {}
-            if os.path.exists("secrets.json"):
-                with open("secrets.json", "r") as f:
+            if os.path.exists(secrets_path):
+                with open(secrets_path, "r") as f:
                     secrets = json.load(f)
             
             secrets["perplexity_api_key"] = api_key
             
-            with open("secrets.json", "w") as f:
+            # Save to home directory
+            with open(secrets_path, "w") as f:
                 json.dump(secrets, f, indent=2)
                 
             self.api_key = api_key
-            print("✅ API key saved successfully")
+            print(f"✅ API key saved successfully to {secrets_path}")
         except Exception as e:
             print(f"Error saving API key: {e}")
+            
+    def reload_api_key(self):
+        """Reload API key from secrets.json"""
+        self.api_key = self.load_api_key()
+        print(f"🔄 API key reloaded: {'✅ Configured' if self.api_key else '❌ Not configured'}")
             
     def ask_question(self, question: str, selected_text: str = "", background_context: str = "", length: str = "medium") -> str:
         """Ask a question to the LLM with proper markdown parsing"""
