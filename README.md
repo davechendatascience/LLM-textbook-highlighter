@@ -1,13 +1,13 @@
 # LLM PDF Reader
 
-A modern, intelligent PDF reader powered by Perplexity AI. Features cross-platform compatibility, fast text extraction, interactive GUI, and smart question generation with customizable answer lengths. Optimized for reliability and ease of use.
+A modern, intelligent PDF reader powered by Perplexity AI with advanced vector store capabilities. Features cross-platform compatibility, fast text extraction, interactive GUI, semantic search, and smart question generation with customizable answer lengths. Optimized for reliability and ease of use.
 
 ## 🚀 Quick Start
 
 ### Install from Package (Recommended)
 Download the latest installer from the [GitHub Releases](https://github.com/davechendatascience/LLM-textbook-highlighter/releases):
-- **macOS**: `LLM-PDF-Reader-Installer.dmg` (~70MB) - Professional drag & drop installation
-- **All Platforms**: `LLM-PDF-Reader-Installer.zip` (~65MB) - Extract and run
+- **macOS**: `LLM-PDF-Reader-Installer.dmg` (~160MB) - Professional drag & drop installation
+- **All Platforms**: `LLM-PDF-Reader-Installer.zip` (~155MB) - Extract and run
 
 ### Run from Source
 ```bash
@@ -21,6 +21,7 @@ python run_reader.py
 **Features:**
 - **Professional UI**: Native look and feel on Windows, macOS, and Linux
 - **Fast PDF rendering**: Uses PyMuPDF for efficient text extraction
+- **Vector Store Integration**: Advanced semantic search and document understanding
 - **Cross-platform compatibility**: Works identically on all operating systems
 - **Built-in API configuration**: Easy setup for Perplexity API key
 
@@ -52,6 +53,9 @@ The application requires the following Python packages:
 - Pillow (image processing)
 - requests (API communication)
 - markdown (text formatting and rendering)
+- chromadb (vector database for semantic search)
+- sentence-transformers (embedding generation)
+- tiktoken (token counting for chunking)
 
 Install all dependencies with:
 ```bash
@@ -99,6 +103,26 @@ Create a `secrets.json` file in the root directory:
 - **LLM Integration**: Ask questions about extracted text using Perplexity API
 - **Multi-language Support**: Automatic language detection and response in user's preferred language
 - **Smart Question Generation**: AI-powered question suggestions based on extracted content
+
+### 🧠 Vector Store Integration (NEW!)
+- **Semantic Search**: Search through PDF content using natural language queries
+- **Document Chunking**: Intelligent token-based segmentation with overlap for optimal context
+- **Enhanced Question Answering**: Context-aware responses using relevant document chunks
+- **Multi-PDF Support**: Process and search across multiple documents simultaneously
+- **Real-time Statistics**: Monitor vector store usage and document processing status
+
+**Vector Store Features:**
+- **ChromaDB Integration**: Fast vector database with persistent storage
+- **SentenceTransformers**: High-quality embeddings using all-MiniLM-L6-v2 model
+- **Smart Chunking**: 512-token chunks with 50-token overlap for context continuity
+- **Metadata Tracking**: Page numbers, chunk IDs, and document information
+- **Background Processing**: Non-blocking PDF processing with progress tracking
+
+**Usage:**
+1. **Process PDF**: Use the Vector Store panel to index your PDF
+2. **Semantic Search**: Search for concepts using natural language
+3. **Enhanced Q&A**: Get context-aware answers using document chunks
+4. **Multi-Document**: Process multiple PDFs and search across all content
 
 ### Enhanced Text Display
 - **Markdown Rendering**: Rich text formatting with support for bold, italic, headers, lists, and code blocks
@@ -208,13 +232,15 @@ For more details, see [PACKAGING.md](PACKAGING.md).
 
 **Vision**: Transform from single-PDF processing to a comprehensive PDF library management system with intelligent context retrieval.
 
-#### **Phase 1: Vector Store Foundation**
-- **Embedding Generation**: Convert PDF text chunks into high-dimensional vectors
-- **Vector Database**: Implement local vector storage (ChromaDB, FAISS, or Pinecone)
-- **Chunking Strategy**: Intelligent text segmentation preserving semantic meaning
-- **Metadata Storage**: Store PDF metadata, page numbers, and chunk relationships
+#### **Phase 1: Vector Store Foundation** ✅ **COMPLETED**
+- **✅ Embedding Generation**: Convert PDF text chunks into high-dimensional vectors
+- **✅ Vector Database**: Implement local vector storage (ChromaDB)
+- **✅ Chunking Strategy**: Intelligent text segmentation preserving semantic meaning
+- **✅ Metadata Storage**: Store PDF metadata, page numbers, and chunk relationships
+- **✅ Semantic Search**: Natural language search across processed documents
+- **✅ Enhanced Q&A**: Context-aware responses using document chunks
 
-#### **Phase 2: Multi-PDF Library Management**
+#### **Phase 2: Multi-PDF Library Management** 🚧 **IN PROGRESS**
 - **Library Interface**: GUI for managing multiple PDF collections
 - **Batch Processing**: Upload and process entire PDF libraries
 - **Collection Organization**: Create themed collections (e.g., "Mathematics", "Physics", "Computer Science")
@@ -235,19 +261,19 @@ For more details, see [PACKAGING.md](PACKAGING.md).
 #### **Technical Architecture**
 ```
 PDF Library System
-├── Vector Store Layer
-│   ├── Embedding Engine (OpenAI, SentenceTransformers)
-│   ├── Vector Database (ChromaDB/FAISS)
+├── Vector Store Layer ✅
+│   ├── Embedding Engine (SentenceTransformers)
+│   ├── Vector Database (ChromaDB)
 │   └── Chunking Pipeline
-├── Library Management
+├── Library Management 🚧
 │   ├── PDF Collection Manager
 │   ├── Metadata Indexer
 │   └── Search Engine
-├── Context Retrieval
+├── Context Retrieval ✅
 │   ├── Semantic Search
 │   ├── Relevance Ranking
 │   └── Context Assembly
-└── Enhanced LLM Integration
+└── Enhanced LLM Integration ✅
     ├── Multi-PDF Context Injection
     ├── Citation Generation
     └── Knowledge Synthesis
@@ -262,10 +288,10 @@ PDF Library System
 - **🧠 Intelligent**: AI-powered content discovery and relationship mapping
 
 #### **Implementation Timeline**
-- **Q1 2024**: Vector store foundation and single-PDF enhancement
-- **Q2 2024**: Multi-PDF library management interface
-- **Q3 2024**: Advanced context retrieval and semantic search
-- **Q4 2024**: Knowledge graph and collaborative features
+- **✅ Q1 2024**: Vector store foundation and single-PDF enhancement
+- **🚧 Q2 2024**: Multi-PDF library management interface
+- **📅 Q3 2024**: Advanced context retrieval and semantic search
+- **📅 Q4 2024**: Knowledge graph and collaborative features
 
 This roadmap will transform the application from a single-PDF reader into a comprehensive knowledge management system for academic and research workflows.
 
