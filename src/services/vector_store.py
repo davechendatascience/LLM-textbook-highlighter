@@ -13,6 +13,7 @@ from chromadb.config import Settings
 from sentence_transformers import SentenceTransformer
 import tiktoken
 import fitz  # PyMuPDF
+from src.utils.multilingual_tokenizer import get_tokenizer
 
 
 @dataclass
@@ -28,7 +29,7 @@ class DocumentChunk:
 class VectorStoreService:
     """Service for managing document chunks and semantic search"""
     
-    def __init__(self, persist_directory: str = "./vector_store"):
+    def __init__(self, persist_directory: str = "./vector_store", use_multilingual_tokenizer: bool = True):
         self.persist_directory = persist_directory
         self.chroma_client = chromadb.PersistentClient(
             path=persist_directory,
@@ -39,7 +40,7 @@ class VectorStoreService:
         self.embedding_model = SentenceTransformer('all-MiniLM-L6-v2')
         
         # Initialize tokenizer for chunking
-        self.tokenizer = tiktoken.get_encoding("cl100k_base")
+        self.tokenizer = get_tokenizer(use_multilingual=use_multilingual_tokenizer)
         
         # Get or create collection
         self.collection = self.chroma_client.get_or_create_collection(
@@ -48,6 +49,10 @@ class VectorStoreService:
         )
         
         print(f"✅ Vector store initialized at: {persist_directory}")
+        if use_multilingual_tokenizer:
+            print("🌍 Using multilingual tokenizer for better multi-language support")
+        else:
+            print("🔤 Using standard tiktoken tokenizer")
     
     def chunk_text(self, text: str, max_tokens: int = 512, overlap: int = 50) -> List[str]:
         """
@@ -61,7 +66,11 @@ class VectorStoreService:
         Returns:
             List of text chunks
         """
-        # Tokenize the text
+        # Use the tokenizer's chunk_text method if available
+        if hasattr(self.tokenizer, 'chunk_text'):
+            return self.tokenizer.chunk_text(text, max_tokens, overlap)
+        
+        # Fallback to original implementation for tiktoken
         tokens = self.tokenizer.encode(text)
         
         if len(tokens) <= max_tokens:
@@ -169,7 +178,7 @@ class VectorStoreService:
                     "page_number": page_num,
                     "chunk_number": chunk_counter,
                     "text_length": len(chunk_text),
-                    "token_count": len(self.tokenizer.encode(chunk_text))
+                    "token_count": self.tokenizer.count_tokens(chunk_text) if hasattr(self.tokenizer, 'count_tokens') else len(self.tokenizer.encode(chunk_text))
                 }
                 
                 # Create document chunk
@@ -361,8 +370,13 @@ class VectorStoreService:
             True if successful, False otherwise
         """
         try:
-            self.collection.delete(where={})
-            print("✅ Cleared all data from vector store")
+            # Get all IDs first, then delete them
+            all_data = self.collection.get()
+            if all_data['ids']:
+                self.collection.delete(ids=all_data['ids'])
+                print("✅ Cleared all data from vector store")
+            else:
+                print("ℹ️ No data to clear from vector store")
             return True
             
         except Exception as e:

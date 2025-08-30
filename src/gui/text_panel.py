@@ -109,6 +109,12 @@ class TextPanel(QWidget):
         self.length_combo.setCurrentText("Medium")
         controls_layout.addWidget(self.length_combo)
         
+        # Show chunks toggle
+        from PySide6.QtWidgets import QCheckBox
+        self.show_chunks_checkbox = QCheckBox(self.language_support.get_text("show_chunks_label") if self.language_support else "Show Context Chunks")
+        self.show_chunks_checkbox.setToolTip(self.language_support.get_text("show_chunks_tooltip") if self.language_support else "Show which document chunks are being used for context")
+        controls_layout.addWidget(self.show_chunks_checkbox)
+        
         layout.addLayout(controls_layout)
         
         # API Key Status Section
@@ -196,8 +202,9 @@ class TextPanel(QWidget):
                 hasattr(self.llm_service, 'ask_question_with_context')):
                 
                 # Use vector store enhanced question answering
+                show_chunks = self.show_chunks_checkbox.isChecked()
                 response = self.llm_service.ask_question_with_context(
-                    question, self.extracted_text, length
+                    question, self.extracted_text, length, show_chunks
                 )
             else:
                 # Use regular question answering

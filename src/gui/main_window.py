@@ -59,12 +59,19 @@ class MainWindow(QMainWindow):
         menubar = self.menuBar()
         
         # File menu
-        file_menu = menubar.addMenu(self.language_support.get_text("open_pdf"))
+        file_menu = menubar.addMenu("File")
         
         open_action = QAction(self.language_support.get_text("open_pdf"), self)
         open_action.setShortcut(QKeySequence.Open)
         open_action.triggered.connect(self.open_pdf)
         file_menu.addAction(open_action)
+        
+        # Vector Store menu
+        vector_store_action = QAction("Vector Store", self)
+        vector_store_action.triggered.connect(self.open_vector_store_dialog)
+        file_menu.addAction(vector_store_action)
+        
+        file_menu.addSeparator()
         
         exit_action = QAction("Exit", self)
         exit_action.setShortcut(QKeySequence.Quit)
@@ -183,6 +190,12 @@ class MainWindow(QMainWindow):
                 
         except Exception as e:
             print(f"Error checking Pandoc availability: {e}")
+    
+    def open_vector_store_dialog(self):
+        """Open the vector store management dialog"""
+        from src.gui.vector_store_dialog import VectorStoreDialog
+        dialog = VectorStoreDialog(self, self.text_panel.llm_service)
+        dialog.exec()
             
     def show_about(self):
         """Show about dialog"""

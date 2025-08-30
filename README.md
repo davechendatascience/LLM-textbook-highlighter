@@ -118,11 +118,31 @@ Create a `secrets.json` file in the root directory:
 - **Metadata Tracking**: Page numbers, chunk IDs, and document information
 - **Background Processing**: Non-blocking PDF processing with progress tracking
 
+**🗄️ Vector Store Management (NEW!):**
+- **Vector Store Dialog**: Access via File → Vector Store for complete administration
+- **PDF Reindexing**: Rebuild entire vector store with improved multilingual tokenizer
+- **Individual PDF Management**: Delete specific PDFs or clear all data
+- **Smart Path Detection**: Automatically validates PDF file paths for reindexing
+- **Progress Tracking**: Real-time progress bars for long operations
+
+**🌍 Multilingual Support (NEW!):**
+- **Robust Language Detection**: Character-counting based detection for Chinese, Japanese, Korean, etc.
+- **Language-Aware Chunking**: Optimal chunk boundaries for different writing systems
+- **Cross-Language Compatibility**: Maintains tiktoken compatibility for LLM token counting
+- **Improved Context Retrieval**: Better semantic search across multiple languages
+
+**🔍 Show Context Chunks (NEW!):**
+- **Chunk Visualization**: Display which document chunks are used for context
+- **Similarity Scores**: Show semantic similarity between query and retrieved chunks
+- **Chunk Preview**: Preview of chunk content with metadata (PDF, page, chunk number)
+- **UI Toggle**: Easy on/off switch for chunk visibility in responses
+
 **Usage:**
 1. **Process PDF**: Use the Vector Store panel to index your PDF
 2. **Semantic Search**: Search for concepts using natural language
 3. **Enhanced Q&A**: Get context-aware answers using document chunks
 4. **Multi-Document**: Process multiple PDFs and search across all content
+5. **Manage Store**: Use Vector Store dialog for administration and reindexing
 
 ### Enhanced Text Display
 - **Markdown Rendering**: Rich text formatting with support for bold, italic, headers, lists, and code blocks
@@ -183,6 +203,8 @@ The system supports mathematical notation through PyMuPDF text extraction:
 8. **Ask Questions**: Type custom questions or select from dropdown
 9. **Click Links**: Click any URL or citation link in the response to open it directly in your browser
 10. **Adjust Settings**: Use font size and answer length controls
+11. **Show Context Chunks**: Toggle "Show Context Chunks" to see which document chunks are used
+12. **Manage Vector Store**: Use File → Vector Store for PDF management and reindexing
 
 
 

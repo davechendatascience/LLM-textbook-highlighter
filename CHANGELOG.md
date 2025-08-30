@@ -2,6 +2,24 @@
 
 ## [Unreleased]
 
+### 🚀 Major Features: Vector Store Management & Multilingual Support
+- **🗄️ Vector Store Management**: Complete vector store administration system
+  - **Vector Store Dialog**: Dedicated UI for managing indexed PDFs and chunks
+  - **PDF Reindexing**: Rebuild entire vector store with improved multilingual tokenizer
+  - **Individual PDF Management**: Delete specific PDFs or clear all data
+  - **Progress Tracking**: Real-time progress bars for reindexing operations
+  - **Smart Path Detection**: Automatically detects and validates PDF file paths for reindexing
+- **🌍 Multilingual Tokenizer**: Enhanced language support for better text chunking
+  - **Robust Language Detection**: Character-counting based detection for Chinese, Japanese, Korean, etc.
+  - **Language-Aware Chunking**: Optimal chunk boundaries for different writing systems
+  - **Cross-Language Compatibility**: Maintains tiktoken compatibility for LLM token counting
+  - **Improved Context Retrieval**: Better semantic search across multiple languages
+- **🔍 Show Context Chunks**: Enhanced debugging and transparency
+  - **Chunk Visualization**: Display which document chunks are used for context
+  - **Similarity Scores**: Show semantic similarity between query and retrieved chunks
+  - **Chunk Preview**: Preview of chunk content with metadata (PDF, page, chunk number)
+  - **UI Toggle**: Easy on/off switch for chunk visibility in responses
+
 ### 🚀 Major Features: Research Integration & Modular Architecture
 - **📚 ArXiv Research Integration**: Direct ArXiv API integration for automatic paper search and citation
   - **Smart Search Term Extraction**: Intelligent keyword extraction focusing on mathematical concepts
@@ -21,6 +39,7 @@
 - **Better URL Handling**: Cleaned up URL processing to remove artifacts and ensure proper link functionality
 
 ### Bug Fixes
+- **Fixed Vector Store Operations**: Resolved ChromaDB deletion errors and method name mismatches
 - **Fixed Context Window**: Selected text now always shows only the red box content, while context pages are used as background for LLM
 - **Fixed Citation Links**: URLs no longer have trailing `)` characters or extra `[` symbols
 - **Fixed Mouse Click Errors**: Resolved `AttributeError` with `anchorName()` vs `anchorNames()`
@@ -43,6 +62,10 @@
     - **Game-theoretic compression**: Optimize latent-space compression for transformer-based vector search
     - **Multi-task embeddings**: Unified query/paper embeddings like OmniSearchSage
     - **Citation-aware search**: MP-BERT4CR for multi-positive citation recommendation
+    - **Multilingual Embedding Models**: Support for better cross-language similarity search
+      - **paraphrase-multilingual-MiniLM-L12-v2**: Enhanced multilingual semantic understanding
+      - **distiluse-base-multilingual-cased-v2**: Improved cross-language document retrieval
+      - **Language-specific embeddings**: Specialized models for Chinese, Japanese, Korean, etc.
   - **Academic Research Integration**:
     - **IntellectSeeker approach**: LLM-based semantic enhancement with probabilistic filtering
     - **Citation network analysis**: CQBG-R for citation-query blended graph ranking

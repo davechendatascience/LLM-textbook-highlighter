@@ -464,7 +464,7 @@ class LLMService:
             print(f"❌ Error searching chunks: {e}")
             return []
     
-    def ask_question_with_context(self, question: str, selected_text: str = "", length: str = "medium") -> str:
+    def ask_question_with_context(self, question: str, selected_text: str = "", length: str = "medium", show_chunks: bool = False) -> str:
         """Ask a question with enhanced context from vector store"""
         if not self.api_key:
             return "Error: No API key configured. Please configure your Perplexity API key."
@@ -472,6 +472,9 @@ class LLMService:
         try:
             # Use selected text as query to find similar chunks in vector store
             enhanced_context = ""
+            chunk_info = ""
+            similar_chunks = []
+            
             if selected_text and self.current_pdf_name:
                 # Search for chunks similar to the selected text
                 similar_chunks = self.search_relevant_chunks(selected_text, n_results=3)
@@ -511,6 +514,24 @@ class LLMService:
             # Process response with references
             processed_response = self.parse_markdown_response(llm_response, reference_urls, search_results)
             
+            # Add chunk information if requested
+            if show_chunks and similar_chunks:
+                chunk_info = "\n\n---\n\n**🔍 Context Chunks Used:**\n"
+                for i, chunk in enumerate(similar_chunks, 1):
+                    metadata = chunk.get('metadata', {})
+                    pdf_name = metadata.get('pdf_name', 'Unknown')
+                    page_num = metadata.get('page_number', 'Unknown')
+                    chunk_num = metadata.get('chunk_number', i)
+                    distance = chunk.get('distance', 0)
+                    
+                    # Truncate chunk text for display
+                    chunk_preview = chunk['text'][:200] + "..." if len(chunk['text']) > 200 else chunk['text']
+                    
+                    chunk_info += f"\n**Chunk {i}** (PDF: {pdf_name}, Page: {page_num}, Chunk: {chunk_num}, Similarity: {1-distance:.3f}):\n"
+                    chunk_info += f"```\n{chunk_preview}\n```\n"
+                
+                processed_response = chunk_info + processed_response
+            
             return processed_response
             
         except requests.exceptions.RequestException as e:
@@ -534,6 +555,6 @@ class LLMService:
         """Clear all data from the vector store"""
         return self.vector_store.clear_collection()
     
-    def delete_pdf_from_store(self, pdf_name: str) -> bool:
+    def delete_pdf_from_vector_store(self, pdf_name: str) -> bool:
         """Delete a specific PDF from the vector store"""
         return self.vector_store.delete_pdf_chunks(pdf_name)

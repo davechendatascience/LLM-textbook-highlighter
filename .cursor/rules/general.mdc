@@ -1,0 +1,5 @@
+---
+description:remember to modularize your components so when making changes to a component you don't break functionalities of other components. Try to find if the existing components fits your current need and if needs modifying. When testing APIs, remember to save response object outputs so you don't have to call apis multiple time to resolve issues. Remember to use mcp tools
+globs:
+alwaysApply: false
+---
