@@ -25,6 +25,11 @@ The LLM PDF Reader now includes a powerful vector store integration using Chroma
 - Process multiple PDFs
 - View statistics and manage stored documents
 - Clear and manage vector store data
+- **🗄️ Vector Store Dialog**: Complete administration interface
+- **🔄 PDF Reindexing**: Rebuild entire vector store with improved tokenizer
+- **🗑️ Individual PDF Management**: Delete specific PDFs or clear all data
+- **📊 Progress Tracking**: Real-time progress bars for long operations
+- **🔍 Smart Path Detection**: Automatically validates PDF file paths for reindexing
 
 ## Architecture
 
@@ -50,11 +55,22 @@ GUI component providing:
 - Vector store statistics and management
 - Real-time progress tracking
 
-### 3. Enhanced LLMService (`src/llm.py`)
+### 3. VectorStoreDialog (`src/gui/vector_store_dialog.py`)
+Advanced management interface providing:
+- Complete vector store administration
+- PDF reindexing with progress tracking
+- Individual PDF deletion and management
+- Smart path validation for reindexing
+- Multi-language support for all UI elements
+
+### 4. Enhanced LLMService (`src/llm.py`)
 Extended with:
 - Vector store integration methods
 - Context-enhanced question answering
 - PDF tracking and management
+- **🔍 Show Context Chunks**: Display which document chunks are used for context
+- **📊 Chunk Visualization**: Show similarity scores and chunk previews
+- **🌍 Multilingual Support**: Enhanced language detection and chunking
 
 ## Usage
 
@@ -98,6 +114,20 @@ Extended with:
 - Search across all indexed documents
 - Maintain separate metadata for each document
 
+#### 🗄️ Vector Store Management
+- **Access**: File → Vector Store in the main menu
+- **PDF Reindexing**: Rebuild entire vector store with improved multilingual tokenizer
+- **Individual PDF Management**: Delete specific PDFs or clear all data
+- **Progress Tracking**: Real-time progress bars for long operations
+- **Smart Path Detection**: Automatically validates PDF file paths for reindexing
+
+#### 🔍 Show Context Chunks
+- **Toggle**: Use "Show Context Chunks" checkbox in the AI Response tab
+- **Chunk Visualization**: Display which document chunks are used for context
+- **Similarity Scores**: Show semantic similarity between query and retrieved chunks
+- **Chunk Preview**: Preview of chunk content with metadata (PDF, page, chunk number)
+- **Debug Information**: Understand how the system retrieves relevant context
+
 ## Technical Details
 
 ### Chunking Strategy
@@ -105,6 +135,11 @@ Extended with:
 - **Overlap**: 50 tokens overlap between chunks for context continuity
 - **Maximum chunk size**: 512 tokens per chunk
 - **Boundary cleaning**: Removes partial words at chunk boundaries
+- **🌍 Multilingual Tokenizer**: Enhanced language support for better chunking
+  - **Robust Language Detection**: Character-counting based detection for Chinese, Japanese, Korean, etc.
+  - **Language-Aware Chunking**: Optimal chunk boundaries for different writing systems
+  - **Cross-Language Compatibility**: Maintains tiktoken compatibility for LLM token counting
+  - **Improved Context Retrieval**: Better semantic search across multiple languages
 
 ### Embedding Model
 - **Model**: `all-MiniLM-L6-v2` (SentenceTransformers)
@@ -190,10 +225,24 @@ Process the current PDF:
 success = llm_service.process_current_pdf()
 ```
 
-#### `ask_question_with_context(question, selected_text="", length="medium")`
+#### `ask_question_with_context(question, selected_text="", length="medium", show_chunks=False)`
 Ask questions with enhanced context:
 ```python
-response = llm_service.ask_question_with_context("What is this about?", selected_text)
+response = llm_service.ask_question_with_context("What is this about?", selected_text, "medium", show_chunks=True)
+```
+
+#### `delete_pdf_from_vector_store(pdf_name)`
+Delete a specific PDF from the vector store:
+```python
+success = llm_service.delete_pdf_from_vector_store("document.pdf")
+```
+
+#### `get_vector_store_stats()`
+Get comprehensive vector store statistics:
+```python
+stats = llm_service.get_vector_store_stats()
+print(f"PDFs: {stats['pdf_names']}")
+print(f"Total chunks: {stats['total_chunks']}")
 ```
 
 ## Troubleshooting
@@ -230,6 +279,14 @@ logging.basicConfig(level=logging.DEBUG)
 - **Query expansion**: Automatically expand search terms
 - **Caching**: Cache frequently accessed embeddings
 - **Batch processing**: Process multiple PDFs simultaneously
+- **🌍 Enhanced Multilingual Support**: 
+  - **paraphrase-multilingual-MiniLM-L12-v2**: Enhanced multilingual semantic understanding
+  - **distiluse-base-multilingual-cased-v2**: Improved cross-language document retrieval
+  - **Language-specific embeddings**: Specialized models for Chinese, Japanese, Korean, etc.
+- **🔍 Advanced Context Retrieval**: 
+  - **Cross-language similarity search**: Find relevant content across different languages
+  - **Language-aware query processing**: Optimize search for multilingual documents
+  - **Context-aware chunking**: Intelligent chunk boundaries for mixed-language content
 
 ### Performance Optimizations
 - **Async processing**: Non-blocking PDF processing
