@@ -11,6 +11,7 @@ from typing import Optional, List, Dict
 from src.services.arxiv_service import ArxivService, ArxivPaper
 from src.services.vector_store import VectorStoreService
 from src.utils.language_support import LanguageSupport
+from src.utils.citation_processor import process_perplexity_response, process_perplexity_response_with_external_links, process_generic_response
 
 
 class LLMService:
@@ -92,67 +93,15 @@ class LLMService:
             # Build the prompt
             prompt = self.build_prompt(question, selected_text, background_context)
             
-            # Choose model based on length
-            if length.lower() == "long":
-                model = "sonar-reasoning"
-            else:
-                model = "sonar"
-                
-            # Get response from Perplexity API
-            headers = {
-                "Authorization": f"Bearer {self.api_key}",
-                "Content-Type": "application/json"
-            }
-            
-            data = {
-                "model": model,
-                "messages": [{"role": "user", "content": prompt}],
-                "max_tokens": 1000 if length.lower() == "short" else 2000,
-                "temperature": 0.1
-            }
-            
-            response = requests.post("https://api.perplexity.ai/chat/completions", headers=headers, json=data)
-            response.raise_for_status()
-            
-            result = response.json()
+            # Use unified API call method
+            result = self._call_perplexity_api(prompt, length)
             llm_response = result["choices"][0]["message"]["content"]
             
-            # Debug: Print the full response structure
-            print(f"🔍 Full Perplexity API response keys: {list(result.keys())}")
-            if "citations" in result:
-                print(f"🔍 Citations structure: {result['citations']}")
-            if "search_results" in result:
-                print(f"🔍 Search results structure: {result['search_results']}")
-            
-            # Debug: Check for inline citations in the LLM response
-            print(f"🔍 LLM Response content: {llm_response}")
-            inline_citations = re.findall(r'\[(\d+)\]', llm_response)
-            print(f"🔍 Found inline citations: {inline_citations}")
-            
-            # Also check for [Selected Text] and other citation patterns
-            selected_text_citations = re.findall(r'\[Selected Text\]', llm_response)
-            print(f"🔍 Found [Selected Text] citations: {selected_text_citations}")
-            
-            # Check for any other citation patterns
-            all_citations = re.findall(r'\[([^\]]+)\]', llm_response)
-            print(f"🔍 All citation patterns found: {all_citations}")
-            
-            # Extract reference URLs from Perplexity API response
-            reference_urls = []
-            if "citations" in result:
-                for citation in result["citations"]:
-                    if "url" in citation:
-                        reference_urls.append(citation["url"])
-                        
-            if "search_results" in result:
-                for result_item in result["search_results"]:
-                    if "url" in result_item:
-                        reference_urls.append(result_item["url"])
-            
-            print(f"🔍 Found {len(reference_urls)} reference URLs from Perplexity API")
+            # Extract reference URLs and search results
+            reference_urls, search_results = self._extract_references_from_response(result)
             
             # Parse markdown and extract references
-            parsed_response = self.parse_markdown_response(llm_response, reference_urls)
+            parsed_response = self.parse_markdown_response(llm_response, reference_urls, search_results)
             
             # Add research enhancement if enabled
             if self.research_enabled:
@@ -184,148 +133,207 @@ class LLMService:
         prompt += f"Please provide a clear and comprehensive answer.{language_instruction} Include any references or sources at the end of your response."
         
         return prompt
+    
+    def _call_perplexity_api(self, prompt: str, length: str = "medium") -> Dict:
+        """Unified method to call Perplexity API"""
+        # Choose model based on length
+        if length.lower() == "long":
+            model = "sonar-reasoning"
+        else:
+            model = "sonar"
+            
+        # Get response from Perplexity API
+        headers = {
+            "Authorization": f"Bearer {self.api_key}",
+            "Content-Type": "application/json"
+        }
         
-    def parse_markdown_response(self, response: str, reference_urls: List[str]) -> str:
-        """Parse markdown response and extract references"""
+        data = {
+            "model": model,
+            "messages": [{"role": "user", "content": prompt}],
+            "max_tokens": 1000 if length.lower() == "short" else 2000,
+            "temperature": 0.1
+        }
+        
+        response = requests.post("https://api.perplexity.ai/chat/completions", headers=headers, json=data)
+        response.raise_for_status()
+        
+        result = response.json()
+        
+        # Debug: Print the full response structure
+        print(f"🔍 Full Perplexity API response keys: {list(result.keys())}")
+        if "citations" in result:
+            print(f"🔍 Citations structure: {result['citations']}")
+        if "search_results" in result:
+            print(f"🔍 Search results structure: {result['search_results']}")
+        
+        return result
+    
+    def _extract_references_from_response(self, result: Dict) -> tuple[List[str], List[Dict]]:
+        """Extract reference URLs and search results from API response"""
+        reference_urls = []
+        search_results = []
+        
+        # Extract search_results if available
+        if "search_results" in result:
+            search_results = result["search_results"]
+            for result_item in search_results:
+                if "url" in result_item:
+                    reference_urls.append(result_item["url"])
+        
+        # Extract citations if available (avoid duplicates)
+        seen_urls = set(reference_urls)
+        if "citations" in result:
+            for citation in result["citations"]:
+                if "url" in citation and citation["url"] not in seen_urls:
+                    reference_urls.append(citation["url"])
+                    seen_urls.add(citation["url"])
+        
+        print(f"🔍 Found {len(reference_urls)} reference URLs from Perplexity API")
+        return reference_urls, search_results
+        
+    def parse_markdown_response(self, response: str, reference_urls: List[str], search_results: List[Dict] = None) -> str:
+        """Parse markdown response using improved citation processor"""
         print(f"🔍 Parsing response with {len(reference_urls)} reference URLs")
         print(f"🔍 Response preview: {response[:300]}...")
         
-        # Split response into main content and references
-        parts = response.split("## References")
+        import re
         
-        print(f"🔍 Found {len(parts)} parts after splitting by '## References'")
+        # First, convert context citations to standard numbered format
+        print(f"🔍 Converting context citations to standard format...")
         
-        main_content = parts[0].strip()
-        references_text = parts[1].strip() if len(parts) > 1 else ""
+        # Convert [from the selected text] to [1]
+        processed_response = re.sub(r'\[from the selected text\]', '[1]', response)
         
-        print(f"🔍 Main content length: {len(main_content)}")
-        print(f"🔍 References text length: {len(references_text)}")
+        # Convert [Context 1], [Context 2], etc. to [2], [3], etc.
+        context_matches = re.findall(r'\[Context (\d+)\]', response)
+        for i, context_num in enumerate(context_matches, 2):  # Start from 2 since [1] is used for selected text
+            processed_response = re.sub(rf'\[Context {context_num}\]', f'[{i}]', processed_response)
         
-        # Parse references from the markdown
-        references = self.extract_references_from_markdown(references_text, reference_urls)
+        # For Perplexity, the citations are in the API response object, not in the text
+        # We need to manually add the citation links to the text
+        if reference_urls:
+            print(f"🔍 Adding citation links to text...")
+            
+            # Find all citation numbers in the text [1], [2], [3], etc.
+            citation_numbers = re.findall(r'\[(\d+)\]', processed_response)
+            unique_citations = list(set(citation_numbers))
+            unique_citations.sort(key=int)
+            
+            print(f"🔍 Found citation numbers: {unique_citations}")
+            print(f"🔍 Available URLs: {reference_urls}")
+            
+            # Convert plain citations to direct external URLs with titles
+            for i, citation_num in enumerate(unique_citations):
+                if i < len(reference_urls):
+                    url = reference_urls[i]
+                    
+                    # Try to get title from search_results if available
+                    title = None
+                    if search_results and i < len(search_results):
+                        title = search_results[i].get('title', '')
+                    
+                    # Create display text: use title if available, otherwise domain
+                    if title:
+                        # Truncate title if too long
+                        display_text = title[:50] + "..." if len(title) > 50 else title
+                    else:
+                        # Extract domain from URL
+                        try:
+                            from urllib.parse import urlparse
+                            parsed_url = urlparse(url)
+                            domain = parsed_url.netloc
+                            if domain.startswith('www.'):
+                                domain = domain[4:]
+                            display_text = domain
+                        except:
+                            display_text = f"Reference {citation_num}"
+                    
+                    # Convert [1] to [1](url) - direct external links
+                    pattern = rf'\[{citation_num}\]'
+                    replacement = f'[{citation_num}]({url})'
+                    processed_response = re.sub(pattern, replacement, processed_response)
+                    print(f"🔗 Converted [{citation_num}] to [{citation_num}]({url}) with title: {display_text}")
         
-        # If no references were found in the text but we have URLs, create references
-        if not references and reference_urls:
-            print(f"🔍 Creating references from {len(reference_urls)} URLs")
-            references = []
-            for i, url in enumerate(reference_urls, 1):
-                # Extract domain name for display
-                from urllib.parse import urlparse
+        # Use the citation processor that preserves external URLs
+        processed_response = process_perplexity_response_with_external_links(processed_response)
+        
+        # Fix consecutive citation formatting
+        processed_response = self.fix_consecutive_citations(processed_response)
+        
+        # Add proper reference section with actual URLs and titles
+        if reference_urls:
+            processed_response = self.add_reference_section(processed_response, reference_urls, search_results)
+        
+        print(f"🔍 Processed response preview: {processed_response[:300]}...")
+        
+        # Check for citation patterns in the processed response
+        citation_patterns = re.findall(r'\[(\d+)\]\(([^)]+)\)', processed_response)
+        print(f"🔍 Found {len(citation_patterns)} normalized citations: {citation_patterns}")
+        
+        return processed_response
+    
+    def fix_consecutive_citations(self, text: str) -> str:
+        """Fix consecutive citation formatting to ensure proper spacing and formatting"""
+        import re
+        
+        # Pattern to match consecutive citations: [1](url1)[2](url2)[3](url3)
+        # This ensures proper spacing and consistent formatting
+        pattern = r'\[(\d+)\]\(([^)]+)\)\[(\d+)\]\(([^)]+)\)'
+        
+        def replace_consecutive(match):
+            num1, url1, num2, url2 = match.groups()
+            # Ensure proper spacing between consecutive citations
+            return f'[{num1}]({url1}) [{num2}]({url2})'
+        
+        # Apply the fix multiple times to handle longer sequences
+        fixed_text = text
+        for _ in range(10):  # Limit iterations to prevent infinite loops
+            new_text = re.sub(pattern, replace_consecutive, fixed_text)
+            if new_text == fixed_text:
+                break
+            fixed_text = new_text
+        
+        return fixed_text
+    
+    def add_reference_section(self, text: str, reference_urls: List[str], search_results: List[Dict] = None) -> str:
+        """Add a proper reference section with actual URLs and titles"""
+        # Remove any existing reference section
+        import re
+        text = re.sub(r'\n\n## References?\s*\n.*', '', text, flags=re.DOTALL)
+        
+        # Add new reference section
+        ref_section = "\n\n## References\n\n"
+        
+        for i, url in enumerate(reference_urls, 1):
+            # Try to get title from search_results if available
+            title = None
+            if search_results and i-1 < len(search_results):
+                title = search_results[i-1].get('title', '')
+            
+            # Create display text: use title if available, otherwise domain
+            if title:
+                # Truncate title if too long
+                display_text = title[:80] + "..." if len(title) > 80 else title
+            else:
+                # Extract domain from URL
                 try:
+                    from urllib.parse import urlparse
                     parsed_url = urlparse(url)
                     domain = parsed_url.netloc
                     if domain.startswith('www.'):
                         domain = domain[4:]
-                    ref_text = f"Reference {i} - {domain}"
+                    display_text = domain
                 except:
-                    ref_text = f"Reference {i}"
-                
-                references.append(f"{ref_text} - [Link]({url})")
-        
-        # Process inline citations in main content
-        main_content = self.process_inline_citations(main_content, references, reference_urls)
-        
-        # Keep as markdown and add references section
-        markdown_content = main_content
-        
-        # Add references section
-        if references:
-            print(f"🔍 Adding {len(references)} references to response")
-            markdown_content += "\n\n## References\n\n"
-            for i, ref in enumerate(references, 1):
-                markdown_content += f"{i}. {ref}\n\n"
-        else:
-            print("🔍 No references to add")
-        
-        return markdown_content
-        
-    def process_inline_citations(self, content: str, references: List[str], reference_urls: List[str]) -> str:
-        """Process inline citations like [1], [2], etc. and make them clickable HTML links"""
-        print(f"🔍 Processing inline citations. Content preview: {content[:200]}...")
-        
-        # First, handle [Selected Text] citations by converting them to a search link
-        if "[Selected Text]" in content:
-            print("🔍 Found [Selected Text] citation, converting to search link")
-            # Create a search link for the selected text
-            search_url = "https://scholar.google.com/scholar?q=selected+text"
-            content = content.replace("[Selected Text]", f'<a href="{search_url}">Selected Text</a>')
-        
-        # Convert citations directly to HTML links to avoid markdown conflicts
-        citation_count = 0
-        
-        def replace_citation(match):
-            nonlocal citation_count
-            citation_num = match.group(1)
-            citation_count += 1
+                    display_text = f"Reference {i}"
             
-            try:
-                index = int(citation_num) - 1  # Convert to 0-based index
-                
-                # The citations array order corresponds to citation numbers
-                # [1] maps to citations[0], [2] maps to citations[1], etc.
-                if index < len(reference_urls):
-                    url = reference_urls[index]
-                    html_link = f'<a href="{url}">[{citation_num}]</a>'
-                    print(f"🔗 Creating HTML link: {html_link}")
-                    return html_link
-                else:
-                    print(f"⚠️ Citation [{citation_num}] has no corresponding URL")
-                    return f"[{citation_num}]"
-            except (ValueError, IndexError):
-                print(f"⚠️ Invalid citation number: {citation_num}")
-                return f"[{citation_num}]"
+            # Create markdown link
+            ref_section += f"{i}. [{display_text}]({url})\n\n"
         
-        # Replace inline citations with HTML links
-        content = re.sub(r'\[(\d+)\]', replace_citation, content)
+        return text + ref_section
         
-        print(f"🔍 Final processed content preview: {content[:300]}...")
-        return content
-        
-    def extract_references_from_markdown(self, references_text: str, reference_urls: List[str]) -> List[str]:
-        """Extract references from markdown text"""
-        references = []
-        
-        print(f"🔍 Processing references text: {references_text[:200]}...")
-        print(f"🔍 Available reference URLs: {reference_urls}")
-        
-        # Split by lines and process each reference
-        lines = references_text.split('\n')
-        current_ref = ""
-        
-        for line in lines:
-            line = line.strip()
-            if not line:
-                if current_ref:
-                    references.append(current_ref.strip())
-                    current_ref = ""
-                continue
-                
-            # Check if this is a numbered reference
-            if re.match(r'^\d+\.', line):
-                if current_ref:
-                    references.append(current_ref.strip())
-                current_ref = line
-            else:
-                current_ref += " " + line
-                
-        # Add the last reference
-        if current_ref:
-            references.append(current_ref.strip())
-            
-        print(f"🔍 Extracted {len(references)} references: {references}")
-        
-        # If we have reference URLs from the API, enhance the references
-        if reference_urls and len(reference_urls) >= len(references):
-            enhanced_references = []
-            for i, (ref, url) in enumerate(zip(references, reference_urls)):
-                # Extract the reference text (remove the number prefix)
-                ref_text = re.sub(r'^\d+\.\s*', '', ref)
-                # Create a proper markdown link
-                enhanced_ref = f"{ref_text} - [Link]({url})"
-                enhanced_references.append(enhanced_ref)
-            return enhanced_references
-            
-        return references
+    # Note: Removed duplicate citation processing methods that were not being used
+    # The main citation processing is now handled in parse_markdown_response and add_reference_section
         
     def enhance_with_research(self, response: str, question: str) -> str:
         """Add research papers and web resources to the response"""
@@ -389,26 +397,8 @@ class LLMService:
             
             base_prompt = f"Based on the following text, generate 3-5 thoughtful questions that could help someone understand the key concepts better:{language_instruction}\n\n{text}"
             
-            # Choose model for short questions
-            model = "sonar"
-            
-            # Get response from Perplexity API
-            headers = {
-                "Authorization": f"Bearer {self.api_key}",
-                "Content-Type": "application/json"
-            }
-            
-            data = {
-                "model": model,
-                "messages": [{"role": "user", "content": base_prompt}],
-                "max_tokens": 1000,
-                "temperature": 0.1
-            }
-            
-            response = requests.post("https://api.perplexity.ai/chat/completions", headers=headers, json=data)
-            response.raise_for_status()
-            
-            result = response.json()
+            # Use unified API call method
+            result = self._call_perplexity_api(base_prompt, "short")
             llm_response = result["choices"][0]["message"]["content"]
             
             # Return raw response without reference processing for questions
@@ -501,52 +491,39 @@ class LLMService:
             # Build the prompt with enhanced context
             prompt = self.build_prompt(question, "", enhanced_context)
             
-            # Choose model based on length
-            if length.lower() == "long":
-                model = "sonar-reasoning"
-            else:
-                model = "sonar"
+            # Use unified API call method
+            result = self._call_perplexity_api(prompt, length)
             
-            # Get response from Perplexity API
-            headers = {
-                "Authorization": f"Bearer {self.api_key}",
-                "Content-Type": "application/json"
-            }
+            # Validate API response structure
+            if "choices" not in result or not result["choices"]:
+                print(f"⚠️ Unexpected API response structure: {result}")
+                return "Error: Unexpected response format from API"
             
-            data = {
-                "model": model,
-                "messages": [{"role": "user", "content": prompt}],
-                "max_tokens": 1000 if length.lower() == "short" else 2000,
-                "temperature": 0.1
-            }
+            if "message" not in result["choices"][0] or "content" not in result["choices"][0]["message"]:
+                print(f"⚠️ Missing content in API response: {result['choices'][0]}")
+                return "Error: No content in API response"
             
-            response = requests.post("https://api.perplexity.ai/chat/completions", headers=headers, json=data)
-            response.raise_for_status()
-            
-            result = response.json()
             llm_response = result["choices"][0]["message"]["content"]
             
-            # Extract reference URLs from Perplexity API response
-            reference_urls = []
-            if "citations" in result:
-                for citation in result["citations"]:
-                    if "url" in citation:
-                        reference_urls.append(citation["url"])
-                        
-            if "search_results" in result:
-                for result_item in result["search_results"]:
-                    if "url" in result_item:
-                        reference_urls.append(result_item["url"])
-            
-            print(f"🔍 Found {len(reference_urls)} reference URLs from Perplexity API")
+            # Extract reference URLs and search results using unified method
+            reference_urls, search_results = self._extract_references_from_response(result)
             
             # Process response with references
-            processed_response = self.parse_markdown_response(llm_response, reference_urls)
+            processed_response = self.parse_markdown_response(llm_response, reference_urls, search_results)
             
             return processed_response
             
+        except requests.exceptions.RequestException as e:
+            print(f"❌ Network error asking question with context: {e}")
+            return f"Error: Network error - {str(e)}"
+        except json.JSONDecodeError as e:
+            print(f"❌ JSON decode error asking question with context: {e}")
+            return f"Error: Invalid response format - {str(e)}"
+        except KeyError as e:
+            print(f"❌ Missing key in API response: {e}")
+            return f"Error: Unexpected response structure - {str(e)}"
         except Exception as e:
-            print(f"Error asking question with context: {e}")
+            print(f"❌ Unexpected error asking question with context: {e}")
             return f"Error: {str(e)}"
     
     def get_vector_store_stats(self) -> Dict:

@@ -84,6 +84,9 @@ class MainWindow(QMainWindow):
         self.setStatusBar(self.status_bar)
         self.status_bar.showMessage("Ready")
         
+        # Check for Pandoc and show warning if not available
+        self.check_pandoc_availability()
+        
     def connect_signals(self):
         """Connect signals between components"""
         # PDF viewer signals
@@ -157,6 +160,29 @@ class MainWindow(QMainWindow):
             except Exception as e:
                 print(f"Error processing PDF for vector store: {e}")
                 self.status_bar.showMessage(f"Loaded: {pdf_name} (vector store processing failed)")
+    
+    def check_pandoc_availability(self):
+        """Check for Pandoc availability and show warning if not available"""
+        try:
+            from src.utils.pandoc_detector import check_pandoc_availability, get_pandoc_warning_message
+            is_available, version, error = check_pandoc_availability()
+            
+            if not is_available:
+                # Show warning in status bar
+                self.status_bar.showMessage("⚠️ Pandoc not detected - LaTeX math rendering may be limited")
+                
+                # Show detailed warning dialog
+                warning_message = get_pandoc_warning_message()
+                QMessageBox.information(
+                    self, 
+                    "Pandoc Not Detected", 
+                    warning_message
+                )
+            else:
+                self.status_bar.showMessage(f"✅ Pandoc {version} detected - enhanced LaTeX math support available")
+                
+        except Exception as e:
+            print(f"Error checking Pandoc availability: {e}")
             
     def show_about(self):
         """Show about dialog"""

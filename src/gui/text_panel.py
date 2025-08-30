@@ -10,7 +10,7 @@ from PySide6.QtCore import Qt, Signal
 from PySide6.QtGui import QFont
 
 from src.llm import LLMService
-from src.gui.markdown_widget import EnhancedMarkdownTextWidget
+from src.gui.markdown_web_widget import EnhancedMarkdownWebWidget
 
 
 class TextPanel(QWidget):
@@ -143,7 +143,7 @@ class TextPanel(QWidget):
         layout.addLayout(api_layout)
         
         # Response display
-        self.response_widget = EnhancedMarkdownTextWidget()
+        self.response_widget = EnhancedMarkdownWebWidget()
         layout.addWidget(self.response_widget)
         
         return widget
