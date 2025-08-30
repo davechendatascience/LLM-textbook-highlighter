@@ -15,12 +15,15 @@ from PySide6.QtGui import QFont
 class SettingsDialog(QDialog):
     """Settings dialog for API configuration and other settings"""
     
-    def __init__(self, parent=None):
+    def __init__(self, parent=None, llm_service=None):
         super().__init__(parent)
         self.setWindowTitle("Settings")
         self.setModal(True)
         self.setMinimumWidth(500)
         self.setMinimumHeight(400)
+        
+        # Store LLM service for vector store operations
+        self.llm_service = llm_service
         
         # Load current settings
         self.current_secrets = self.load_secrets()
@@ -42,6 +45,11 @@ class SettingsDialog(QDialog):
         # General Settings tab
         self.general_tab = self.create_general_settings_tab()
         self.tab_widget.addTab(self.general_tab, "General Settings")
+        
+        # Vector Store Management tab
+        if self.llm_service:
+            self.vector_store_tab = self.create_vector_store_tab()
+            self.tab_widget.addTab(self.vector_store_tab, "Vector Store Management")
         
         layout.addWidget(self.tab_widget)
         
@@ -117,6 +125,152 @@ class SettingsDialog(QDialog):
         
         return widget
         
+    def create_vector_store_tab(self):
+        """Create the vector store management tab"""
+        from PySide6.QtWidgets import QVBoxLayout, QHBoxLayout, QLabel, QPushButton, QTextEdit, QGroupBox, QProgressBar, QMessageBox
+        from PySide6.QtCore import QThread, Signal
+        
+        widget = QWidget()
+        layout = QVBoxLayout(widget)
+        
+        # Statistics Section
+        stats_group = QGroupBox("Vector Store Statistics")
+        stats_layout = QVBoxLayout(stats_group)
+        
+        self.stats_display = QTextEdit()
+        self.stats_display.setMaximumHeight(150)
+        self.stats_display.setReadOnly(True)
+        stats_layout.addWidget(self.stats_display)
+        
+        refresh_button = QPushButton("Refresh Statistics")
+        refresh_button.clicked.connect(self.refresh_vector_store_stats)
+        stats_layout.addWidget(refresh_button)
+        
+        layout.addWidget(stats_group)
+        
+        # Management Section
+        management_group = QGroupBox("Vector Store Management")
+        management_layout = QVBoxLayout(management_group)
+        
+        # Current PDF info
+        self.current_pdf_label = QLabel("No PDF currently loaded")
+        management_layout.addWidget(self.current_pdf_label)
+        
+        # Control buttons
+        button_layout = QHBoxLayout()
+        
+        self.process_pdf_button = QPushButton("Process Current PDF")
+        self.process_pdf_button.clicked.connect(self.process_current_pdf)
+        self.process_pdf_button.setEnabled(False)
+        button_layout.addWidget(self.process_pdf_button)
+        
+        self.clear_store_button = QPushButton("Clear All Data")
+        self.clear_store_button.clicked.connect(self.clear_vector_store)
+        button_layout.addWidget(self.clear_store_button)
+        
+        management_layout.addLayout(button_layout)
+        
+        # Progress bar
+        self.progress_bar = QProgressBar()
+        self.progress_bar.setVisible(False)
+        management_layout.addWidget(self.progress_bar)
+        
+        layout.addWidget(management_group)
+        
+        # Initialize statistics
+        self.refresh_vector_store_stats()
+        
+        return widget
+        
+    def refresh_vector_store_stats(self):
+        """Refresh vector store statistics"""
+        if not self.llm_service:
+            return
+            
+        try:
+            stats = self.llm_service.vector_store.get_collection_stats()
+            
+            stats_text = f"Total Chunks: {stats.get('total_chunks', 0)}\n"
+            stats_text += f"Unique PDFs: {stats.get('unique_pdfs', 0)}\n"
+            stats_text += f"Max Pages: {stats.get('max_pages', 0)}\n\n"
+            
+            pdf_names = stats.get('pdf_names', [])
+            if pdf_names:
+                stats_text += "Indexed PDFs:\n"
+                for pdf_name in pdf_names:
+                    stats_text += f"• {pdf_name}\n"
+            else:
+                stats_text += "No PDFs indexed yet."
+            
+            self.stats_display.setPlainText(stats_text)
+            
+        except Exception as e:
+            self.stats_display.setPlainText(f"Error loading statistics: {str(e)}")
+    
+    def process_current_pdf(self):
+        """Process the current PDF for vector store"""
+        if not self.llm_service or not self.llm_service.current_pdf_path:
+            QMessageBox.warning(self, "Warning", "No PDF currently loaded.")
+            return
+            
+        try:
+            self.progress_bar.setVisible(True)
+            self.progress_bar.setRange(0, 0)  # Indeterminate progress
+            self.process_pdf_button.setEnabled(False)
+            
+            # Process the PDF
+            success = self.llm_service.process_current_pdf()
+            
+            if success:
+                QMessageBox.information(self, "Success", f"Successfully processed {self.llm_service.current_pdf_name}")
+            else:
+                QMessageBox.warning(self, "Warning", f"Failed to process {self.llm_service.current_pdf_name}")
+            
+            # Refresh statistics
+            self.refresh_vector_store_stats()
+            
+        except Exception as e:
+            QMessageBox.critical(self, "Error", f"Error processing PDF: {str(e)}")
+        finally:
+            self.progress_bar.setVisible(False)
+            self.process_pdf_button.setEnabled(True)
+    
+    def clear_vector_store(self):
+        """Clear all data from vector store"""
+        if not self.llm_service:
+            return
+            
+        reply = QMessageBox.question(
+            self, 
+            "Confirm Clear", 
+            "Are you sure you want to clear all vector store data? This action cannot be undone.",
+            QMessageBox.Yes | QMessageBox.No,
+            QMessageBox.No
+        )
+        
+        if reply == QMessageBox.Yes:
+            try:
+                success = self.llm_service.vector_store.clear_collection()
+                if success:
+                    QMessageBox.information(self, "Success", "Vector store cleared successfully.")
+                    self.refresh_vector_store_stats()
+                else:
+                    QMessageBox.warning(self, "Warning", "Failed to clear vector store.")
+            except Exception as e:
+                QMessageBox.critical(self, "Error", f"Error clearing vector store: {str(e)}")
+    
+    def update_current_pdf_info(self):
+        """Update the current PDF information display"""
+        if not self.llm_service:
+            return
+            
+        if self.llm_service.current_pdf_name:
+            self.current_pdf_label.setText(f"Current PDF: {self.llm_service.current_pdf_name}")
+            self.process_pdf_button.setEnabled(True)
+        else:
+            self.current_pdf_label.setText("No PDF currently loaded")
+            self.process_pdf_button.setEnabled(False)
+            
     def load_secrets(self):
         """Load current secrets from secrets.json"""
         # Try multiple locations for secrets.json
@@ -148,6 +302,10 @@ class SettingsDialog(QDialog):
         self.enable_research_checkbox.setChecked(self.current_secrets.get("enable_research_by_default", True))
         self.enable_web_search_checkbox.setChecked(self.current_secrets.get("enable_web_search_by_default", False))
         
+        # Update vector store info if available
+        if hasattr(self, 'update_current_pdf_info'):
+            self.update_current_pdf_info()
+            
     def save_settings(self):
         """Save settings to secrets.json"""
         try:

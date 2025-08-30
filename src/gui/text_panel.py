@@ -10,7 +10,7 @@ from PySide6.QtCore import Qt, Signal
 from PySide6.QtGui import QFont
 
 from src.llm import LLMService
-from src.gui.markdown_widget import MarkdownTextWidget
+from src.gui.markdown_widget import EnhancedMarkdownTextWidget
 
 
 class TextPanel(QWidget):
@@ -21,7 +21,6 @@ class TextPanel(QWidget):
         self.language_support = language_support
         self.llm_service = LLMService(language_support)
         self.extracted_text = ""
-        self.context_text = ""
         self.current_font_size = 12
         self.current_markdown_content = ""  # Store current markdown content
         
@@ -36,7 +35,7 @@ class TextPanel(QWidget):
         self.tab_widget = QTabWidget()
         
         # Extracted text tab
-        self.extracted_tab = self.create_extracted_text_tab()
+        self.extracted_tab = self.create_extraction_tab()
         self.tab_widget.addTab(self.extracted_tab, self.language_support.get_text("extracted_text_tab") if self.language_support else "Extracted Text")
         
         # LLM response tab
@@ -45,32 +44,14 @@ class TextPanel(QWidget):
         
         layout.addWidget(self.tab_widget)
         
-    def create_extracted_text_tab(self):
-        """Create the extracted text tab"""
+    def create_extraction_tab(self):
+        """Create the text extraction tab"""
         widget = QWidget()
         layout = QVBoxLayout(widget)
         
-        # Context window controls
-        context_layout = QHBoxLayout()
-        context_layout.addWidget(QLabel(self.language_support.get_text("context_window_label") if self.language_support else "Context Window:"))
-        
-        self.context_combo = QComboBox()
-        if self.language_support:
-            self.context_combo.addItems(self.language_support.get_context_window_options())
-        else:
-            self.context_combo.addItems([
-                "±0 pages (current page only)",
-                "±1 pages",
-                "±2 pages", 
-                "±3 pages",
-                "±4 pages",
-                "±5 pages"
-            ])
-        self.context_combo.currentTextChanged.connect(self.on_context_changed)
-        context_layout.addWidget(self.context_combo)
-        
         # Font size controls
-        context_layout.addWidget(QLabel(self.language_support.get_text("font_size") if self.language_support else "Font Size:"))
+        font_layout = QHBoxLayout()
+        font_layout.addWidget(QLabel(self.language_support.get_text("font_size") if self.language_support else "Font Size:"))
         self.font_size_combo = QComboBox()
         if self.language_support:
             self.font_size_combo.addItems(self.language_support.get_font_size_options())
@@ -78,9 +59,9 @@ class TextPanel(QWidget):
             self.font_size_combo.addItems(["Small (10pt)", "Medium (12pt)", "Large (14pt)", "Extra Large (20pt)"])
         self.font_size_combo.setCurrentText("Medium (12pt)")
         self.font_size_combo.currentTextChanged.connect(self.on_font_size_changed)
-        context_layout.addWidget(self.font_size_combo)
+        font_layout.addWidget(self.font_size_combo)
         
-        layout.addLayout(context_layout)
+        layout.addLayout(font_layout)
         
         # Extracted text display
         self.extracted_text_edit = QTextEdit()
@@ -162,7 +143,7 @@ class TextPanel(QWidget):
         layout.addLayout(api_layout)
         
         # Response display
-        self.response_widget = MarkdownTextWidget()
+        self.response_widget = EnhancedMarkdownTextWidget()
         layout.addWidget(self.response_widget)
         
         return widget
@@ -171,27 +152,6 @@ class TextPanel(QWidget):
         """Set the extracted text"""
         self.extracted_text = text
         self.extracted_text_edit.setText(text)
-        
-    def on_context_changed(self, context_text: str):
-        """Handle context window change"""
-        # Extract the number from the context text
-        if "±0" in context_text:
-            context_pages = 0
-        elif "±1" in context_text:
-            context_pages = 1
-        elif "±2" in context_text:
-            context_pages = 2
-        elif "±3" in context_text:
-            context_pages = 3
-        elif "±4" in context_text:
-            context_pages = 4
-        elif "±5" in context_text:
-            context_pages = 5
-        else:
-            context_pages = 0
-            
-        # Store context pages for later use
-        self.context_pages = context_pages
         
     def on_font_size_changed(self, font_size_text: str):
         """Handle font size change"""
@@ -289,13 +249,6 @@ class TextPanel(QWidget):
 {self.extracted_text}
 
 """
-        
-        # Add context if available
-        if hasattr(self, 'context_text') and self.context_text:
-            prompt += f"""**Background Context (Additional Context - For reference only):**
-{self.context_text}
-
-"""
             
         prompt += f"""**Question:**
 {question}
@@ -328,7 +281,7 @@ Please provide a clear, well-structured answer."""
     def open_api_settings(self):
         """Open the API settings dialog"""
         from src.gui.settings_dialog import SettingsDialog
-        dialog = SettingsDialog(self)
+        dialog = SettingsDialog(self, self.llm_service)
         if dialog.exec() == SettingsDialog.Accepted:
             # Reload API key
             self.llm_service.reload_api_key()

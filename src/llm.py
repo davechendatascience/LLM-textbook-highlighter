@@ -480,16 +480,19 @@ class LLMService:
             return "Error: No API key configured. Please configure your Perplexity API key."
         
         try:
-            # Search for relevant chunks
-            relevant_chunks = self.search_relevant_chunks(question)
-            
-            # Build enhanced context
+            # Use selected text as query to find similar chunks in vector store
             enhanced_context = ""
-            if relevant_chunks:
-                enhanced_context = "\n\n**Relevant Context from Document:**\n\n"
-                for i, chunk in enumerate(relevant_chunks, 1):
-                    enhanced_context += f"**Context {i} (Page {chunk['metadata']['page_number']}):**\n"
-                    enhanced_context += f"{chunk['text']}\n\n"
+            if selected_text and self.current_pdf_name:
+                # Search for chunks similar to the selected text
+                similar_chunks = self.search_relevant_chunks(selected_text, n_results=3)
+                
+                if similar_chunks:
+                    enhanced_context = "\n\n**Relevant Context from Document (found using semantic search):**\n\n"
+                    for i, chunk in enumerate(similar_chunks, 1):
+                        enhanced_context += f"**Context {i} (Page {chunk['metadata']['page_number']}):**\n"
+                        enhanced_context += f"{chunk['text']}\n\n"
+                else:
+                    print(f"ℹ️ No similar chunks found for selected text in {self.current_pdf_name}")
             
             # Combine with selected text
             if selected_text:
@@ -523,8 +526,22 @@ class LLMService:
             result = response.json()
             llm_response = result["choices"][0]["message"]["content"]
             
+            # Extract reference URLs from Perplexity API response
+            reference_urls = []
+            if "citations" in result:
+                for citation in result["citations"]:
+                    if "url" in citation:
+                        reference_urls.append(citation["url"])
+                        
+            if "search_results" in result:
+                for result_item in result["search_results"]:
+                    if "url" in result_item:
+                        reference_urls.append(result_item["url"])
+            
+            print(f"🔍 Found {len(reference_urls)} reference URLs from Perplexity API")
+            
             # Process response with references
-            processed_response = self.parse_markdown_response(llm_response, result)
+            processed_response = self.parse_markdown_response(llm_response, reference_urls)
             
             return processed_response
             

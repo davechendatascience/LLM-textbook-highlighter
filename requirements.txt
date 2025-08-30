@@ -10,3 +10,6 @@ markdown
 chromadb
 sentence-transformers
 tiktoken
+matplotlib
+python-markdown-math
+sympy

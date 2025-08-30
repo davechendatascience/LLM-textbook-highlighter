@@ -4,6 +4,7 @@ Handles the main window, layout, and high-level UI management
 """
 
 import sys
+import os # Added for os.path.basename
 from PySide6.QtWidgets import (QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, 
                                QSplitter, QMenuBar, QStatusBar, QFileDialog, QMessageBox)
 from PySide6.QtCore import Qt, QTimer
@@ -12,7 +13,6 @@ from PySide6.QtGui import QAction, QKeySequence
 # Use absolute imports
 from src.gui.pdf_viewer import PDFViewer
 from src.gui.text_panel import TextPanel
-from src.gui.vector_store_panel import VectorStorePanel
 from src.utils.language_support import LanguageSupport
 
 
@@ -27,12 +27,11 @@ class MainWindow(QMainWindow):
         
         # Set window title
         self.setWindowTitle(self.language_support.get_text("window_title"))
-        self.setGeometry(100, 100, 1600, 900)  # Increased width for vector store panel
+        self.setGeometry(100, 100, 1400, 800)  # Reduced size since we removed vector store panel
         
         # Initialize components
         self.pdf_viewer = PDFViewer(self.language_support)
         self.text_panel = TextPanel(self.language_support)
-        self.vector_store_panel = VectorStorePanel(self.text_panel.llm_service)
         
         self.setup_ui()
         self.setup_menu()
@@ -47,12 +46,11 @@ class MainWindow(QMainWindow):
         # Main layout
         main_layout = QHBoxLayout(central_widget)
         
-        # Main splitter - PDF viewer, text panel, and vector store panel
+        # Main splitter - PDF viewer and text panel
         self.main_splitter = QSplitter(Qt.Horizontal)
         self.main_splitter.addWidget(self.pdf_viewer)
         self.main_splitter.addWidget(self.text_panel)
-        self.main_splitter.addWidget(self.vector_store_panel)
-        self.main_splitter.setSizes([600, 500, 500])  # Adjusted sizes for three panels
+        self.main_splitter.setSizes([600, 500])  # Adjusted sizes for two panels
         
         main_layout.addWidget(self.main_splitter)
         
@@ -141,8 +139,24 @@ class MainWindow(QMainWindow):
             self, self.language_support.get_text("open_pdf"), "", "PDF Files (*.pdf)"
         )
         if file_path:
+            # Load PDF in viewer
             self.pdf_viewer.load_pdf(file_path)
             self.status_bar.showMessage(f"Loaded: {file_path}")
+            
+            # Set as current PDF in LLM service for vector store operations
+            pdf_name = os.path.basename(file_path)
+            self.text_panel.llm_service.set_current_pdf(file_path, pdf_name)
+            
+            # Automatically process PDF for vector store if not already processed
+            try:
+                success = self.text_panel.llm_service.process_current_pdf()
+                if success:
+                    self.status_bar.showMessage(f"Loaded and processed: {pdf_name}")
+                else:
+                    self.status_bar.showMessage(f"Loaded: {pdf_name} (processing failed)")
+            except Exception as e:
+                print(f"Error processing PDF for vector store: {e}")
+                self.status_bar.showMessage(f"Loaded: {pdf_name} (vector store processing failed)")
             
     def show_about(self):
         """Show about dialog"""
