@@ -34,6 +34,9 @@ secrets.json
 # Models and data
 models/
 
+# Vector store
+vector_store/
+
 # IDE
 .vscode/
 .idea/
