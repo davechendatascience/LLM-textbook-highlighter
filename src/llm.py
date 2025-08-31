@@ -31,56 +31,63 @@ class LLMService:
         self.current_pdf_path = None
         
     def load_api_key(self) -> Optional[str]:
-        """Load API key from secrets.json"""
-        # Try multiple locations for secrets.json
-        possible_paths = [
-            "secrets.json",  # Current directory (development)
-            os.path.join(os.path.expanduser("~"), "secrets.json"),  # Home directory
-            os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "..", "secrets.json"),  # Project root
-        ]
+        """Load API key from environment variable or project root secrets.json"""
+        # First try environment variable
+        api_key = os.environ.get("PERPLEXITY_API_KEY")
+        if api_key:
+            print("✅ API key loaded from environment variable")
+            return api_key
         
-        for secrets_path in possible_paths:
-            try:
-                if os.path.exists(secrets_path):
-                    print(f"🔍 Loading API key from: {secrets_path}")
-                    with open(secrets_path, "r") as f:
-                        secrets = json.load(f)
-                        api_key = secrets.get("perplexity_api_key")
-                        if api_key:
-                            print(f"✅ API key loaded successfully from {secrets_path}")
-                            return api_key
-            except Exception as e:
-                print(f"⚠️ Error loading from {secrets_path}: {e}")
-                continue
+        # Fallback to project root directory
+        secrets_path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "secrets.json")
+        try:
+            if os.path.exists(secrets_path):
+                print(f"🔍 Loading API key from project root: {secrets_path}")
+                with open(secrets_path, "r") as f:
+                    secrets = json.load(f)
+                    api_key = secrets.get("perplexity_api_key")
+                    if api_key:
+                        print(f"✅ API key loaded successfully from {secrets_path}")
+                        return api_key
+        except Exception as e:
+            print(f"⚠️ Error loading from {secrets_path}: {e}")
         
-        print("❌ No API key found in any location")
+        print("❌ No API key found in environment or project root")
         return None
             
     def save_api_key(self, api_key: str):
-        """Save API key to secrets.json"""
+        """Save API key to environment variable and project root secrets.json"""
         try:
-            # Save to user's home directory for packaged app compatibility
-            secrets_path = os.path.join(os.path.expanduser("~"), "secrets.json")
-            
-            # Load existing secrets if they exist
-            secrets = {}
-            if os.path.exists(secrets_path):
-                with open(secrets_path, "r") as f:
-                    secrets = json.load(f)
-            
-            secrets["perplexity_api_key"] = api_key
-            
-            # Save to home directory
-            with open(secrets_path, "w") as f:
-                json.dump(secrets, f, indent=2)
-                
+            # Set environment variable for current session
+            os.environ["PERPLEXITY_API_KEY"] = api_key
             self.api_key = api_key
-            print(f"✅ API key saved successfully to {secrets_path}")
+            print("✅ API key saved to environment variable")
+            
+            # Also save to project root secrets.json for persistence
+            try:
+                secrets_path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "secrets.json")
+                
+                # Load existing secrets if they exist
+                secrets = {}
+                if os.path.exists(secrets_path):
+                    with open(secrets_path, "r") as f:
+                        secrets = json.load(f)
+                
+                secrets["perplexity_api_key"] = api_key
+                
+                # Save to project root
+                with open(secrets_path, "w") as f:
+                    json.dump(secrets, f, indent=2)
+                    
+                print(f"✅ API key also saved to {secrets_path}")
+            except Exception as e:
+                print(f"⚠️ Could not save to secrets.json: {e}")
+                
         except Exception as e:
             print(f"Error saving API key: {e}")
             
     def reload_api_key(self):
-        """Reload API key from secrets.json"""
+        """Reload API key from environment or project root secrets.json"""
         self.api_key = self.load_api_key()
         print(f"🔄 API key reloaded: {'✅ Configured' if self.api_key else '❌ Not configured'}")
             

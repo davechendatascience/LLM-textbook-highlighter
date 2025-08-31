@@ -272,25 +272,31 @@ class SettingsDialog(QDialog):
             self.process_pdf_button.setEnabled(False)
             
     def load_secrets(self):
-        """Load current secrets from secrets.json"""
-        # Try multiple locations for secrets.json
-        possible_paths = [
-            os.path.join(os.path.expanduser("~"), "secrets.json"),  # Home directory (packaged app)
-            os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), "secrets.json"),  # Project root (development)
-        ]
+        """Load current secrets from environment variables or project root secrets.json"""
+        secrets = {}
         
-        for secrets_path in possible_paths:
+        # First try environment variable
+        api_key = os.environ.get("PERPLEXITY_API_KEY")
+        if api_key:
+            secrets["perplexity_api_key"] = api_key
+            print("✅ API key loaded from environment variable")
+        
+        # Fallback to project root directory
+        if not api_key:
+            secrets_path = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))), "secrets.json")
             try:
                 if os.path.exists(secrets_path):
-                    print(f"🔍 Loading settings from: {secrets_path}")
+                    print(f"🔍 Loading settings from project root: {secrets_path}")
                     with open(secrets_path, 'r') as f:
-                        return json.load(f)
+                        file_secrets = json.load(f)
+                        secrets.update(file_secrets)
             except (FileNotFoundError, json.JSONDecodeError) as e:
                 print(f"⚠️ Error loading from {secrets_path}: {e}")
-                continue
         
-        print("❌ No settings file found, using defaults")
-        return {}
+        if not secrets:
+            print("❌ No settings found, using defaults")
+        
+        return secrets
             
     def load_current_settings(self):
         """Load current settings into the UI"""
@@ -307,22 +313,34 @@ class SettingsDialog(QDialog):
             self.update_current_pdf_info()
             
     def save_settings(self):
-        """Save settings to secrets.json"""
+        """Save settings to environment variables and project root secrets.json"""
         try:
+            # Get API key from input
+            api_key = self.perplexity_key_input.text().strip()
+            
+            # Set environment variable for current session
+            if api_key:
+                os.environ["PERPLEXITY_API_KEY"] = api_key
+                print("✅ API key saved to environment variable")
+            
             # Prepare secrets data
             secrets_data = {
-                "perplexity_api_key": self.perplexity_key_input.text().strip(),
+                "perplexity_api_key": api_key,
                 "default_answer_length": self.default_length_combo.currentText(),
                 "enable_research_by_default": self.enable_research_checkbox.isChecked(),
                 "enable_web_search_by_default": self.enable_web_search_checkbox.isChecked()
             }
             
-            # Save to user's home directory for packaged app compatibility
-            secrets_path = os.path.join(os.path.expanduser("~"), "secrets.json")
-            with open(secrets_path, 'w') as f:
-                json.dump(secrets_data, f, indent=2)
+            # Also save to project root secrets.json for persistence
+            try:
+                secrets_path = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))), "secrets.json")
+                with open(secrets_path, 'w') as f:
+                    json.dump(secrets_data, f, indent=2)
+                    
+                print(f"✅ Settings also saved to {secrets_path}")
+            except Exception as e:
+                print(f"⚠️ Could not save to secrets.json: {e}")
                 
-            print(f"✅ Settings saved successfully to {secrets_path}")
             QMessageBox.information(self, "Success", "Settings saved successfully!")
             self.accept()
             

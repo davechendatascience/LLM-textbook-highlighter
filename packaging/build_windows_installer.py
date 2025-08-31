@@ -1,102 +1,99 @@
 #!/usr/bin/env python3
 """
 Windows Installer Builder for LLM Textbook Highlighter
-Handles complete installation including Pandoc and all dependencies
+Creates both an NSIS installer and a portable package
 """
 
 import os
 import sys
-import subprocess
 import shutil
+import subprocess
 import zipfile
-import urllib.request
-import tempfile
 from pathlib import Path
-import json
 
-class WindowsInstallerBuilder:
-    def __init__(self):
-        self.project_root = Path(__file__).parent
-        self.build_dir = self.project_root / "build"
-        self.dist_dir = self.project_root / "dist"
-        self.installer_name = "LLM_Textbook_Highlighter_Setup"
-        
-    def clean_build_dirs(self):
-        """Clean previous build artifacts"""
-        print("🧹 Cleaning build directories...")
-        if self.build_dir.exists():
-            shutil.rmtree(self.build_dir)
-        if self.dist_dir.exists():
-            shutil.rmtree(self.dist_dir)
-        
-        self.build_dir.mkdir(exist_ok=True)
-        self.dist_dir.mkdir(exist_ok=True)
-        print("✅ Build directories cleaned")
+def print_step(message):
+    """Print a formatted step message"""
+    print(f"🔨 {message}")
+
+def print_success(message):
+    """Print a formatted success message"""
+    print(f"✅ {message}")
+
+def print_error(message):
+    """Print a formatted error message"""
+    print(f"❌ {message}")
+
+def print_warning(message):
+    """Print a formatted warning message"""
+    print(f"⚠️  {message}")
+
+def print_info(message):
+    """Print a formatted info message"""
+    print(f"ℹ️  {message}")
+
+def check_nsis_installation():
+    """Check if NSIS is installed and return the path to makensis"""
+    # Common NSIS installation paths
+    nsis_paths = [
+        r"C:\Program Files (x86)\NSIS\makensis.exe",
+        r"C:\Program Files\NSIS\makensis.exe",
+        r"C:\NSIS\makensis.exe"
+    ]
     
-    def install_python_dependencies(self):
-        """Install Python dependencies"""
-        print("📦 Installing Python dependencies...")
-        try:
-            subprocess.check_call([
-                sys.executable, '-m', 'pip', 'install', '-r', 'requirements.txt'
-            ])
-            print("✅ Python dependencies installed")
-            return True
-        except subprocess.CalledProcessError as e:
-            print(f"❌ Failed to install Python dependencies: {e}")
-            return False
+    for path in nsis_paths:
+        if os.path.exists(path):
+            return path
     
-    def download_pandoc(self):
-        """Download Pandoc for Windows"""
-        print("📥 Downloading Pandoc for Windows...")
-        
-        # Get latest Pandoc version
-        pandoc_url = "https://github.com/jgm/pandoc/releases/download/3.1.9/pandoc-3.1.9-windows-x86_64.zip"
-        pandoc_dir = self.build_dir / "pandoc"
-        pandoc_dir.mkdir(exist_ok=True)
-        
-        try:
-            # Download Pandoc
-            temp_file = tempfile.NamedTemporaryFile(delete=False, suffix='.zip')
-            urllib.request.urlretrieve(pandoc_url, temp_file.name)
-            
-            # Extract Pandoc
-            with zipfile.ZipFile(temp_file.name, 'r') as zip_ref:
-                zip_ref.extractall(pandoc_dir)
-            
-            # Clean up temp file
-            os.unlink(temp_file.name)
-            
-            print("✅ Pandoc downloaded and extracted")
-            return True
-        except Exception as e:
-            print(f"❌ Failed to download Pandoc: {e}")
-            return False
+    return None
+
+def create_nsis_script(build_dir, dist_dir):
+    """Create the NSIS installer script"""
+    # Copy required files to build directory
+    if os.path.exists("LICENSE"):
+        shutil.copy("LICENSE", build_dir)
+    if os.path.exists("assets/llm_icon.ico"):
+        shutil.copy("assets/llm_icon.ico", build_dir)
     
-    def create_installer_script(self):
-        """Create NSIS installer script"""
-        print("📝 Creating NSIS installer script...")
-        
-        nsis_script = f"""
-# NSIS Installer Script for LLM Textbook Highlighter
+    # Copy the onedir executable directory
+    onedir_path = "dist/LLM-Textbook-Highlighter"
+    onedir_exe = "dist/LLM-Textbook-Highlighter/LLM-Textbook-Highlighter.exe"
+    if os.path.exists(onedir_exe):
+        # Copy the entire onedir directory
+        if os.path.exists(os.path.join(build_dir, "LLM-Textbook-Highlighter")):
+            shutil.rmtree(os.path.join(build_dir, "LLM-Textbook-Highlighter"))
+        shutil.copytree(onedir_path, os.path.join(build_dir, "LLM-Textbook-Highlighter"))
+        print_success("Onedir executable directory copied to build directory")
+    else:
+        print_error(f"Onedir executable not found: {onedir_exe}")
+        print_info("Please run the onedir build first: python packaging/build_onedir_exe.py")
+        return None
+    
+    # Copy documentation files
+    for file in ["README.md"]:
+        if os.path.exists(file):
+            shutil.copy(file, build_dir)
+    
+
+    
+    nsis_script = f"""# NSIS Installer Script for LLM Textbook Highlighter
 
 !define APP_NAME "LLM Textbook Highlighter"
 !define APP_VERSION "1.0.0"
 !define APP_PUBLISHER "LLM Textbook Highlighter Team"
-!define APP_EXE "run_reader.py"
+!define APP_EXE "LLM-Textbook-Highlighter.exe"
 
 !include "MUI2.nsh"
 
 Name "${{APP_NAME}}"
-OutFile "${{OUTDIR}}\\{self.installer_name}.exe"
+OutFile "${{OUTDIR}}\\LLM_Textbook_Highlighter_Setup.exe"
 InstallDir "$PROGRAMFILES\\${{APP_NAME}}"
 InstallDirRegKey HKCU "Software\\${{APP_NAME}}" ""
 
 RequestExecutionLevel admin
 
 !define MUI_ABORTWARNING
-!define MUI_ICON "assets\\icon.ico"
-!define MUI_UNICON "assets\\icon.ico"
+!define MUI_ICON "llm_icon.ico"
+!define MUI_UNICON "llm_icon.ico"
 
 !insertmacro MUI_PAGE_WELCOME
 !insertmacro MUI_PAGE_LICENSE "LICENSE"
@@ -112,51 +109,37 @@ RequestExecutionLevel admin
 Section "Main Application" SecMain
     SetOutPath "$INSTDIR"
     
-    # Copy application files
-    File /r "src\\"
-    File "run_reader.py"
-    File "requirements.txt"
+    # Copy onedir executable directory and documentation
+    File /r "LLM-Textbook-Highlighter"
     File "README.md"
     File "LICENSE"
-    
-    # Copy Pandoc
-    SetOutPath "$INSTDIR\\pandoc"
-    File /r "build\\pandoc\\"
     
     # Create uninstaller
     WriteUninstaller "$INSTDIR\\Uninstall.exe"
     
     # Create start menu shortcut
     CreateDirectory "$SMPROGRAMS\\${{APP_NAME}}"
-    CreateShortCut "$SMPROGRAMS\\${{APP_NAME}}\\${{APP_NAME}}.lnk" "$INSTDIR\\run_reader.py"
+    CreateShortCut "$SMPROGRAMS\\${{APP_NAME}}\\${{APP_NAME}}.lnk" "$INSTDIR\\LLM-Textbook-Highlighter\\${{APP_EXE}}"
     CreateShortCut "$SMPROGRAMS\\${{APP_NAME}}\\Uninstall.lnk" "$INSTDIR\\Uninstall.exe"
     
     # Create desktop shortcut
-    CreateShortCut "$DESKTOP\\${{APP_NAME}}.lnk" "$INSTDIR\\run_reader.py"
+    CreateShortCut "$DESKTOP\\${{APP_NAME}}.lnk" "$INSTDIR\\LLM-Textbook-Highlighter\\${{APP_EXE}}"
     
     # Write registry keys
     WriteRegStr HKCU "Software\\${{APP_NAME}}" "" $INSTDIR
     WriteRegStr HKCU "Software\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\${{APP_NAME}}" "DisplayName" "${{APP_NAME}}"
     WriteRegStr HKCU "Software\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\${{APP_NAME}}" "UninstallString" "$INSTDIR\\Uninstall.exe"
-    WriteRegStr HKCU "Software\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\${{APP_NAME}}" "DisplayIcon" "$INSTDIR\\assets\\icon.ico"
+    WriteRegStr HKCU "Software\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\${{APP_NAME}}" "DisplayIcon" "$INSTDIR\\LLM-Textbook-Highlighter\\${{APP_EXE}}"
     WriteRegStr HKCU "Software\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\${{APP_NAME}}" "Publisher" "${{APP_PUBLISHER}}"
     WriteRegStr HKCU "Software\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\${{APP_NAME}}" "DisplayVersion" "${{APP_VERSION}}"
     
-    # Install Python dependencies
-    DetailPrint "Installing Python dependencies..."
-    ExecWait 'python -m pip install -r "$INSTDIR\\requirements.txt"'
-    
-    # Set up Pandoc
-    DetailPrint "Setting up Pandoc..."
-    ExecWait 'python -c "from src.utils.pandoc_installer import setup_pandoc; setup_pandoc()"'
+    DetailPrint "Installing standalone application..."
+    DetailPrint "No Python installation required - this is a standalone executable!"
 SectionEnd
 
 Section "Uninstall"
     # Remove files
-    RMDir /r "$INSTDIR\\src"
-    RMDir /r "$INSTDIR\\pandoc"
-    Delete "$INSTDIR\\run_reader.py"
-    Delete "$INSTDIR\\requirements.txt"
+    RMDir /r "$INSTDIR\\LLM-Textbook-Highlighter"
     Delete "$INSTDIR\\README.md"
     Delete "$INSTDIR\\LICENSE"
     Delete "$INSTDIR\\Uninstall.exe"
@@ -173,134 +156,191 @@ Section "Uninstall"
     DeleteRegKey HKCU "Software\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\${{APP_NAME}}"
 SectionEnd
 """
-        
-        nsis_file = self.build_dir / "installer.nsi"
-        with open(nsis_file, 'w', encoding='utf-8') as f:
-            f.write(nsis_script)
-        
-        print("✅ NSIS script created")
-        return nsis_file
     
-    def build_installer(self):
-        """Build the installer using NSIS"""
-        print("🔨 Building installer with NSIS...")
-        
-        nsis_script = self.create_installer_script()
-        
-        try:
-            # Check if NSIS is installed
-            subprocess.run(['makensis', '/VERSION'], capture_output=True, check=True)
-            
-            # Build installer
-            subprocess.check_call([
-                'makensis', 
-                f'/DOUTDIR={self.dist_dir}',
-                str(nsis_script)
-            ])
-            
-            print("✅ Installer built successfully")
-            return True
-        except (subprocess.CalledProcessError, FileNotFoundError):
-            print("❌ NSIS not found. Installer script created but not compiled.")
-            print("   To build the installer, install NSIS from: https://nsis.sourceforge.io/")
-            print(f"   Then run: makensis /DOUTDIR={self.dist_dir} {nsis_script}")
-            return False
+    script_path = os.path.join(build_dir, "installer.nsi")
+    with open(script_path, 'w', encoding='utf-8') as f:
+        f.write(nsis_script)
     
-    def create_portable_package(self):
-        """Create a portable package (alternative to installer)"""
-        print("📦 Creating portable package...")
-        
-        portable_dir = self.dist_dir / "LLM_Textbook_Highlighter_Portable"
-        portable_dir.mkdir(exist_ok=True)
-        
-        # Copy application files
-        shutil.copytree("src", portable_dir / "src", dirs_exist_ok=True)
-        shutil.copy("run_reader.py", portable_dir)
-        shutil.copy("requirements.txt", portable_dir)
-        shutil.copy("README.md", portable_dir)
-        
-        # Copy Pandoc
-        if (self.build_dir / "pandoc").exists():
-            shutil.copytree(self.build_dir / "pandoc", portable_dir / "pandoc", dirs_exist_ok=True)
-        
-        # Create batch file for easy execution
-        batch_content = """@echo off
-echo Starting LLM Textbook Highlighter...
-echo.
-echo Installing dependencies...
-python -m pip install -r requirements.txt
-echo.
-echo Starting application...
-python run_reader.py
-pause
-"""
-        
-        with open(portable_dir / "run.bat", 'w') as f:
-            f.write(batch_content)
-        
-        # Create portable zip
-        portable_zip = self.dist_dir / "LLM_Textbook_Highlighter_Portable.zip"
-        with zipfile.ZipFile(portable_zip, 'w', zipfile.ZIP_DEFLATED) as zipf:
-            for root, dirs, files in os.walk(portable_dir):
-                for file in files:
-                    file_path = os.path.join(root, file)
-                    arcname = os.path.relpath(file_path, portable_dir)
-                    zipf.write(file_path, arcname)
-        
-        print("✅ Portable package created")
-        return portable_zip
-    
-    def build(self):
-        """Main build process"""
-        print("🚀 Starting Windows installer build process...")
-        print("=" * 60)
-        
-        # Step 1: Clean build directories
-        self.clean_build_dirs()
-        
-        # Step 2: Install Python dependencies
-        if not self.install_python_dependencies():
-            print("❌ Build failed: Could not install Python dependencies")
-            return False
-        
-        # Step 3: Download Pandoc
-        if not self.download_pandoc():
-            print("⚠️  Warning: Could not download Pandoc. Installer will prompt user to install it.")
-        
-        # Step 4: Build installer
-        installer_success = self.build_installer()
-        
-        # Step 5: Create portable package
-        portable_zip = self.create_portable_package()
-        
-        print("=" * 60)
-        print("🎉 Build process completed!")
-        
-        if installer_success:
-            print(f"✅ Installer created: {self.dist_dir / f'{self.installer_name}.exe'}")
-        
-        print(f"✅ Portable package created: {portable_zip}")
-        print(f"📁 Build artifacts in: {self.dist_dir}")
-        
-        return True
+    return script_path
 
-def main():
-    """Main function"""
-    builder = WindowsInstallerBuilder()
+def build_installer(nsis_script_path, dist_dir):
+    """Build the NSIS installer"""
+    nsis_path = check_nsis_installation()
+    
+    if not nsis_path:
+        print_error("NSIS not found. Installer script created but not compiled.")
+        print_info("To build the installer, install NSIS from: https://nsis.sourceforge.io/")
+        print_info(f"Then run: makensis /DOUTDIR={dist_dir} {nsis_script_path}")
+        return False
     
     try:
-        success = builder.build()
-        if success:
-            print("\n🎯 Build successful! You can now distribute the installer.")
-        else:
-            print("\n❌ Build failed. Check the error messages above.")
-            sys.exit(1)
-    except KeyboardInterrupt:
-        print("\n⚠️  Build cancelled by user.")
-        sys.exit(1)
-    except Exception as e:
-        print(f"\n❌ Unexpected error: {e}")
-        sys.exit(1)
+        # Build the installer using NSIS
+        cmd = [
+            nsis_path,
+            f"/DOUTDIR={dist_dir}",
+            nsis_script_path
+        ]
+        
+        result = subprocess.run(cmd, capture_output=True, text=True, check=True)
+        print_success("NSIS installer built successfully")
+        return True
+        
+    except subprocess.CalledProcessError as e:
+        print_error(f"NSIS build failed: {e}")
+        print_error(f"NSIS output: {e.stdout}")
+        print_error(f"NSIS error: {e.stderr}")
+        return False
+
+def create_portable_package(dist_dir):
+    """Create a portable package (zip file) with onedir executable"""
+    portable_dir = os.path.join(dist_dir, "portable")
+    
+    # Create portable directory structure
+    if os.path.exists(portable_dir):
+        shutil.rmtree(portable_dir)
+    os.makedirs(portable_dir)
+    
+    # Copy onedir executable directory and documentation
+    onedir_path = "dist/LLM-Textbook-Highlighter"
+    onedir_exe = "dist/LLM-Textbook-Highlighter/LLM-Textbook-Highlighter.exe"
+    if os.path.exists(onedir_exe):
+        # Copy the entire onedir directory
+        shutil.copytree(onedir_path, os.path.join(portable_dir, "LLM-Textbook-Highlighter"))
+        print_success("Onedir executable directory copied to portable package")
+    else:
+        print_error(f"Onedir executable not found: {onedir_exe}")
+        print_info("Please run the onedir build first: python packaging/build_onedir_exe.py")
+        return None
+    
+    shutil.copy("README.md", portable_dir)
+    shutil.copy("LICENSE", portable_dir)
+    
+    # Create a simple batch file to run the application
+    batch_content = """@echo off
+echo Starting LLM Textbook Highlighter...
+echo This is a standalone executable - no Python installation required!
+echo.
+cd LLM-Textbook-Highlighter
+LLM-Textbook-Highlighter.exe
+pause
+"""
+    
+    with open(os.path.join(portable_dir, "run.bat"), 'w') as f:
+        f.write(batch_content)
+    
+    # Create zip file
+    zip_path = os.path.join(dist_dir, "LLM_Textbook_Highlighter_Portable.zip")
+    with zipfile.ZipFile(zip_path, 'w', zipfile.ZIP_DEFLATED) as zipf:
+        for root, dirs, files in os.walk(portable_dir):
+            for file in files:
+                file_path = os.path.join(root, file)
+                arcname = os.path.relpath(file_path, portable_dir)
+                zipf.write(file_path, arcname)
+    
+    # Clean up portable directory
+    try:
+        shutil.rmtree(portable_dir)
+    except PermissionError:
+        print_warning("Could not clean up portable directory - you may need to manually delete it")
+    
+    return zip_path
+
+def build_onedir_if_needed():
+    """Build the onedir executable if it doesn't exist"""
+    onedir_exe = "dist/LLM-Textbook-Highlighter/LLM-Textbook-Highlighter.exe"
+    
+    if os.path.exists(onedir_exe):
+        print_success("Onedir executable found - skipping build")
+        return True
+    
+    print_step("Onedir executable not found - building it first...")
+    
+    try:
+        # Run the onedir build script
+        build_script = "packaging/build_onedir_exe.py"
+        if not os.path.exists(build_script):
+            print_error(f"Build script not found: {build_script}")
+            return False
+        
+        result = subprocess.run([sys.executable, build_script], 
+                              capture_output=True, text=True, check=True)
+        print_success("Onedir build completed successfully")
+        return True
+        
+    except subprocess.CalledProcessError as e:
+        print_error(f"Onedir build failed: {e}")
+        if e.stdout:
+            print(f"Build output: {e.stdout}")
+        if e.stderr:
+            print(f"Build error: {e.stderr}")
+        return False
+
+def main():
+    """Main build process"""
+    print("🚀 Starting Windows installer build process...")
+    
+    # Setup directories
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+    project_root = os.path.dirname(script_dir)
+    build_dir = os.path.join(script_dir, "build")
+    dist_dir = os.path.join(script_dir, "dist")
+    
+    # Change to project root
+    os.chdir(project_root)
+    
+    # Create build and dist directories
+    os.makedirs(build_dir, exist_ok=True)
+    os.makedirs(dist_dir, exist_ok=True)
+    
+    # Build onedir executable if needed
+    if not build_onedir_if_needed():
+        return False
+    
+    # Check if onedir executable exists
+    onedir_exe = "dist/LLM-Textbook-Highlighter/LLM-Textbook-Highlighter.exe"
+    if not os.path.exists(onedir_exe):
+        print_error(f"Onedir executable not found: {onedir_exe}")
+        return False
+    
+    print_success("Onedir executable found - proceeding with installer build")
+    
+    # Build installer with NSIS
+    print_step("Building installer with NSIS...")
+    
+    # Create NSIS script
+    print_step("Creating NSIS installer script...")
+    nsis_script_path = create_nsis_script(build_dir, dist_dir)
+    if not nsis_script_path:
+        return False
+    print_success("NSIS script created")
+    
+    # Build the installer
+    installer_success = build_installer(nsis_script_path, dist_dir)
+    
+    # Create portable package
+    print_step("Creating portable package...")
+    portable_path = create_portable_package(dist_dir)
+    if not portable_path:
+        return False
+    print_success("Portable package created")
+    
+    # Summary
+    print("=" * 60)
+    print("🎉 Build process completed!")
+    
+    if installer_success:
+        print_success("NSIS installer created")
+        print("📁 Build artifacts in: " + dist_dir)
+        print("🎯 Build successful! You can now distribute the installer.")
+        print_info("Users don't need Python installed - this is a standalone application!")
+        print_info("Uses onedir format for faster startup and better performance!")
+    else:
+        print_error("NSIS installer failed to build")
+        print_info("Portable package created: " + portable_path)
+        print_info("You can still distribute the portable package.")
+        print_info("Uses onedir format for faster startup and better performance!")
+    
+    return True
 
 if __name__ == "__main__":
     main()
