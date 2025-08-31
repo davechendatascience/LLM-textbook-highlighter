@@ -28,11 +28,19 @@ def main():
     # Show language selection dialog
     language = "English"  # Default language
     
-    dialog = LanguageSelectionDialog()
-    if dialog.exec() == LanguageSelectionDialog.Accepted:
-        language = dialog.get_selected_language()
-    else:
-        sys.exit(0)
+    try:
+        print("🔄 Creating language selection dialog...")
+        dialog = LanguageSelectionDialog()
+        print("🔄 Showing language selection dialog...")
+        if dialog.exec() == LanguageSelectionDialog.Accepted:
+            language = dialog.get_selected_language()
+        else:
+            sys.exit(0)
+        
+    except Exception as e:
+        print(f"⚠️  Error with language dialog: {e}")
+        print("✅ Using default language (English)")
+        language = "English"
     
     # Create and show main window
     window = MainWindow(language)

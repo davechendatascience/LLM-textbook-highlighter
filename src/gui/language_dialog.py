@@ -27,6 +27,10 @@ class LanguageSelectionDialog(QDialog):
         self.setModal(True)
         self.setFixedSize(400, 150)
         
+        # Center the dialog on screen and make it stay on top
+        self.setWindowFlags(Qt.WindowStaysOnTopHint)
+        self.center_on_screen()
+        
         layout = QVBoxLayout(self)
         
         # Title
@@ -61,3 +65,11 @@ class LanguageSelectionDialog(QDialog):
     def get_selected_language(self) -> str:
         """Get the selected language"""
         return self.selected_language
+    
+    def center_on_screen(self):
+        """Center the dialog on the screen"""
+        from PySide6.QtWidgets import QApplication
+        screen = QApplication.primaryScreen().geometry()
+        x = (screen.width() - self.width()) // 2
+        y = (screen.height() - self.height()) // 2
+        self.move(x, y)

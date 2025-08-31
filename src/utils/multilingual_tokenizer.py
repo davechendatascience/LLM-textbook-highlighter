@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
 """
-Multilingual Tokenizer
-Provides better tokenization support for multi-language content
+Multilingual tokenizer for better handling of non-English text
 """
 
 import re
+import sys
 import unicodedata
 from typing import List, Optional
 import tiktoken
@@ -21,7 +21,7 @@ class MultilingualTokenizer:
             fallback_to_tiktoken: Whether to fall back to tiktoken if other methods fail
         """
         self.fallback_to_tiktoken = fallback_to_tiktoken
-        self.tiktoken_encoder = tiktoken.get_encoding("cl100k_base")
+        self._tiktoken_encoder = None  # Lazy loading
         
         # Language-specific patterns for better tokenization
         self.language_patterns = {
@@ -34,6 +34,37 @@ class MultilingualTokenizer:
             'devanagari': re.compile(r'[\u0900-\u097f]+'),  # Devanagari (Hindi, etc.)
             'cyrillic': re.compile(r'[\u0400-\u04ff]+'),  # Cyrillic
         }
+    
+    @property
+    def tiktoken_encoder(self):
+        """Lazy load tiktoken encoder"""
+        if self._tiktoken_encoder is None:
+            print("📥 Loading tiktoken model...")
+            try:
+                # Set environment variable for tiktoken cache
+                import os
+                if getattr(sys, 'frozen', False):
+                    # Running from PyInstaller executable
+                    cache_dir = os.path.join(sys._MEIPASS, "tiktoken_cache")
+                    os.makedirs(cache_dir, exist_ok=True)
+                    os.environ['TIKTOKEN_CACHE_DIR'] = cache_dir
+                    print(f"📁 Using tiktoken cache: {cache_dir}")
+                
+                self._tiktoken_encoder = tiktoken.get_encoding("cl100k_base")
+                print("✅ tiktoken model loaded")
+            except Exception as e:
+                print(f"❌ Failed to load tiktoken model: {e}")
+                # Try without cache directory
+                try:
+                    self._tiktoken_encoder = tiktoken.get_encoding("cl100k_base")
+                    print("✅ tiktoken model loaded (fallback)")
+                except Exception as e2:
+                    print(f"❌ Fallback also failed: {e2}")
+                    # Use fallback tokenizer
+                    from src.utils.fallback_tokenizer import get_fallback_tokenizer
+                    self._tiktoken_encoder = get_fallback_tokenizer()
+                    print("✅ Using fallback tokenizer")
+        return self._tiktoken_encoder
     
     def detect_language_robust(self, text: str) -> str:
         """

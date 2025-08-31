@@ -26,10 +26,32 @@ class DocumentChunk:
     embedding: Optional[List[float]] = None
 
 
+def get_default_vector_store_path():
+    """Get the default vector store path based on the platform"""
+    if os.name == 'nt':  # Windows
+        # Use user's AppData directory for Windows
+        appdata = os.getenv('APPDATA')
+        if appdata:
+            return os.path.join(appdata, 'LLM_Textbook_Highlighter', 'vector_store')
+        else:
+            # Fallback to user's Documents folder
+            documents = os.path.expanduser('~/Documents')
+            return os.path.join(documents, 'LLM_Textbook_Highlighter', 'vector_store')
+    else:
+        # Unix-like systems (macOS, Linux)
+        return "./vector_store"
+
+
 class VectorStoreService:
     """Service for managing document chunks and semantic search"""
     
-    def __init__(self, persist_directory: str = "./vector_store", use_multilingual_tokenizer: bool = True):
+    def __init__(self, persist_directory: str = None, use_multilingual_tokenizer: bool = True):
+        if persist_directory is None:
+            persist_directory = get_default_vector_store_path()
+        
+        # Ensure the directory exists
+        os.makedirs(persist_directory, exist_ok=True)
+        
         self.persist_directory = persist_directory
         self.chroma_client = chromadb.PersistentClient(
             path=persist_directory,
